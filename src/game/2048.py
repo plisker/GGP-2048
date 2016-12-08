@@ -20,62 +20,6 @@ OFFSETS = {UP: (1, 0),
            LEFT: (0, 1),
            RIGHT: (0, -1)}
 
-
-# Progress bar with credit to http://stackoverflow.com/a/6169274 #
-
-
-
-# def startProgress(self, title):
-#     global progress_x
-#     sys.stdout.write(title + ": [" + "-"*40 + "]" + chr(8)*41)
-#     sys.stdout.flush()
-#     progress_x = 0
-
-# def progress(self, x):
-#     global progress_x
-#     x = int(x * 40 // 100)
-#     sys.stdout.write("#" * (x - progress_x))
-#     sys.stdout.flush()
-#     progress_x = x
-
-# def endProgress(self):
-#     sys.stdout.write("#" * (40 - progress_x) + "]\n")
-#     sys.stdout.flush()
-
-        
-def merge(line):
-    """
-    Function that merges a single row or column in 2048.
-    """
-    score = 0
-    result = []
-    line_dimension = len(line)
-
-    # Create new list with all nonzero numbers on the left, merging as necessary
-    last_value = -1
-    for i, value in enumerate(line):
-        if value == 0:
-            pass
-        else:
-            if value == last_value:
-                new_tile = value*2
-                result[len(result)-1] = new_tile
-                score += new_tile
-                last_value = -1
-            else:
-                result.append(value)
-                last_value = value
-
-    zeros = line_dimension-len(result)
-    
-    # Pad with zeros
-    if zeros != 0:
-        for _ in range(zeros):
-            result.append(0)
-
-    return result, score
-
-
 class TwentyFortyEight:
     """
     Class to run the game logic.
@@ -134,6 +78,39 @@ class TwentyFortyEight:
             res.append(self._grid[row][col])
         return res
     
+    def merge(self, line):
+        """
+        Function that merges a single row or column in 2048.
+        """
+        sum_score = 0
+        result = []
+        line_dimension = len(line)
+
+        # Create new list with all nonzero numbers on the left, merging as necessary
+        last_value = -1
+        for i, value in enumerate(line):
+            if value == 0:
+                pass
+            else:
+                if value == last_value:
+                    new_tile = value*2
+                    result[len(result)-1] = new_tile
+                    sum_score += new_tile
+                    last_value = -1
+                else:
+                    result.append(value)
+                    last_value = value
+
+        zeros = line_dimension-len(result)
+        
+        # Pad with zeros
+        if zeros != 0:
+            for _ in range(zeros):
+                result.append(0)
+
+        self.score += sum_score
+        return result
+
     def modify(self , start , direction , steps , merged):
         """
         modifies the grid
@@ -154,10 +131,9 @@ class TwentyFortyEight:
         if direction == RIGHT or direction == LEFT:
             steps = self._width
         for index in self._borders[direction]:
-            cutted = self.cut(index,OFFSETS[direction], steps)
-            merged, score = merge(cutted)
-            self.score += score
-            if cutted != merged :
+            cutted = self.cut(index, OFFSETS[direction], steps)
+            merged = self.merge(cutted)
+            if cutted != merged:
                 changed = True
             self.modify(index,OFFSETS[direction], steps , merged)
         if changed:
