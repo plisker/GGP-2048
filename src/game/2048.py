@@ -5,9 +5,8 @@ Clone of 2048 game.
 """
 import random
 import poc_2048_gui
-import sys
+import sys, tty, termios
 import curses
-from curses import wrapper
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -195,7 +194,7 @@ class TwentyFortyEight:
         """
         return self._grid[row][col] 
 
-def main():
+def play_gui():
     try:
         play = TwentyFortyEight(4, 4)
         game = poc_2048_gui.run_gui(play)
@@ -205,6 +204,60 @@ def main():
     curses.endwin()
     game.final_print()
 
-main()
+# def play_terminal():
+#     # play = TwentyFortyEight(4, 4)
+#     while True:
+#         key = cv2.waitKey(1) & 0xFF
+#             # if the 'ESC' key is pressed, Quit
+#             if key == 27:
+#                 break
+#             if key == 0:
+#                 print "up"
+#             elif key == 1:
+#                 print "down"
+#             elif key == 2:
+#                 print "left"
+#             elif key == 3:
+#                 print "right"
+#             # 255 is what the console returns when there is no key press...
+#             elif key != 255:
+#                 print(key)
 
+def main():
+    play_gui()
 
+# class _Getch:
+#     def __call__(self):
+#             fd = sys.stdin.fileno()
+#             old_settings = termios.tcgetattr(fd)
+#             try:
+#                 tty.setraw(sys.stdin.fileno())
+#                 ch = sys.stdin.read(3)
+#             finally:
+#                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+#             return ch
+
+# def get():
+#         inkey = _Getch()
+#         while(1):
+#             k=inkey()
+#             if k!='':break
+#         print repr(str(k))
+#         if k=='\x1b[A':
+#             print "up"
+#         elif k=='\x1b[B':
+#             print "down"
+#         elif k=='\x1b[C':
+#             print "right"
+#         elif k=='\x1b[D':
+#             print "left"
+#         else:
+#             print "not an arrow key!"
+
+# def main():
+#         for i in range(0,20):
+#             print ""
+#             get()
+
+if __name__=='__main__':
+        main()
