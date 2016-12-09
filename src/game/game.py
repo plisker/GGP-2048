@@ -22,7 +22,7 @@ OFFSETS = {UP: (1, 0),
            RIGHT: (0, -1)}
 
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-EVERY_MOVE = -1
+EVERY_MOVE = 1
 
 class TwentyFortyEight:
     """
@@ -274,20 +274,13 @@ class TwentyFortyEight:
             grid[row][col] = 2
             
     def print_board(self):
-        pass
-        # self.stdscr.clear()
-        # self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-        # # for row in self._grid:
-        # #     self.stdscr.addstr(str(row)+"\n")       
-        # # self.stdscr.refresh()
-
-        # s = [[str(e) for e in row] for row in self._grid]
-        # lens = [max(map(len, col)) for col in zip(*s)]
-        # fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-        # table = [fmt.format(*row) for row in s]
-        # self.stdscr.addstr('\n'.join(table))
-        # self.stdscr.refresh()
-
+        self.stdscr.clear()
+        s = [[str(e) for e in row] for row in self._grid]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        self.stdscr.addstr('\n'.join(table))
+        self.stdscr.refresh()
 
     def simple_print(self):
         print "\nScore: "+str(self.score)

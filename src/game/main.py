@@ -182,9 +182,9 @@ def loop(n):
 
 
 def main():
-	# random_play(4, 4)
+	play_terminal(4, 4)
     # mcts_play(4,4)
-	loop(1000)
+	# loop(1000)
 
 if __name__=='__main__':
         main()
