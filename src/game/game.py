@@ -21,6 +21,8 @@ OFFSETS = {UP: (1, 0),
            LEFT: (0, 1),
            RIGHT: (0, -1)}
 
+EVERY_MOVE = False
+
 class TwentyFortyEight:
     """
     Class to run the game logic.
@@ -34,10 +36,12 @@ class TwentyFortyEight:
                    DOWN: [(self._height-1, col) for col in range(self._width)],
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
-        # self.prepare_terminal_output()
         self.score = 0
-        self.final_print()
-        # self.print_board()
+        if EVERY_MOVE:
+            self.simple_print()
+        else:
+            self.prepare_terminal_output()
+            self.print_board()
 
     def reset(self):
         """
@@ -168,7 +172,10 @@ class TwentyFortyEight:
             self.new_tile()
 
             # TODO: Beautify print to terminal here!
-            self.final_print()
+            if EVERY_MOVE:
+                self.simple_print()
+            else:
+                self.print_board()
 
     def get_successor(self, direction, grid, score):
         """
@@ -272,15 +279,17 @@ class TwentyFortyEight:
             self.stdscr.addstr(str(row)+"\n")       
         self.stdscr.refresh()
 
-    def final_print(self):
-        print "Final Score: "+str(self.score)
+    def simple_print(self):
+        print "Score: "+str(self.score)
         for row in self._grid:
             print row
 
     def end_game(self):
-        # curses.endwin()
-        print ""
-        self.final_print()
+        if not EVERY_MOVE:
+            curses.endwin()
+        else:
+            print "\nGame complete!"
+        self.simple_print()
 
 
     def set_tile(self, row, col, value):
@@ -298,7 +307,7 @@ class TwentyFortyEight:
     def alert(self, string):
         # self.stdscr.addstr(string+"\n")
         # self.stdscr.refresh()
-        print string
+        # print string
         pass
 
 def main():
