@@ -15,7 +15,7 @@
 
 ## TIMELINE
 
-Tues. Dec 6th
+### Tues. Dec 6th
 
 * briefly meet to discuss/make this plan
 
