@@ -4,7 +4,7 @@
 Clone of 2048 game.
 """
 import random
-import poc_2048_gui
+# import poc_2048_gui
 import sys, tty, termios
 import curses
 
@@ -13,6 +13,8 @@ UP = 1
 DOWN = 2
 LEFT = 3
 RIGHT = 4
+QUIT = 5
+
 
 # Offsets for computing tile indices in each direction.
 # DO NOT MODIFY this dictionary.
@@ -37,6 +39,7 @@ class TwentyFortyEight:
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.prepare_terminal_output()
         self.score = 0
+        self.print_board()
 
     def reset(self):
         """
@@ -173,14 +176,20 @@ class TwentyFortyEight:
     def print_board(self):
         self.stdscr.clear()
         self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-        for i in range(self._height):
-            self.stdscr.addstr(str(self._grid[i])+"\n")       
+        for row in self._grid:
+            self.stdscr.addstr(str(row)+"\n")       
         self.stdscr.refresh()
+
+        # self.stdscr.clear()
+        # print "Score:", self.score
+        # for row in self._grid:
+        #     print row
+        # self.stdscr.refresh()
 
     def final_print(self):
         print "Final Score: "+str(self.score)
-        for i in range(self._height):
-            print str(self._grid[i]) 
+        for row in self._grid:
+            print row
 
     def set_tile(self, row, col, value):
         """
@@ -194,70 +203,78 @@ class TwentyFortyEight:
         """
         return self._grid[row][col] 
 
-def play_gui():
-    try:
-        play = TwentyFortyEight(4, 4)
-        game = poc_2048_gui.run_gui(play)
-    except:
-        curses.endwin()
 
+class _Getch:
+    def __call__(self):
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+            if ch == 'q':
+                pass
+            else:
+                if ch == '\x1b':
+                    ch2 = sys.stdin.read(1)
+                    ch = ch+ch2
+                if ch == '\x1b[':
+                    ch3 = sys.stdin.read(1)
+                    ch = ch+ch3
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+def get():
+    inkey = _Getch()
+    while(1):
+        k=inkey()
+        if k!='':break
+    if k == '\x1b[A':
+        return UP
+    elif k == '\x1b[B':
+        return DOWN
+    elif k == '\x1b[C':
+        return RIGHT
+    elif k == '\x1b[D':
+        return LEFT
+    elif k == 'A':
+        return UP
+    elif k == 'B':
+        return DOWN
+    elif k == 'C':
+        return RIGHT
+    elif k == 'D':
+        return LEFT
+    elif k == 'q':
+        print "Quitting..."
+        return QUIT
+    else:
+        print "Not an arrow key! If you want to quit, press \'q\'"
+        print "You pressed", k
+        return -1
+
+def end_game(game):
     curses.endwin()
     game.final_print()
 
-# def play_terminal():
-#     # play = TwentyFortyEight(4, 4)
-#     while True:
-#         key = cv2.waitKey(1) & 0xFF
-#             # if the 'ESC' key is pressed, Quit
-#             if key == 27:
-#                 break
-#             if key == 0:
-#                 print "up"
-#             elif key == 1:
-#                 print "down"
-#             elif key == 2:
-#                 print "left"
-#             elif key == 3:
-#                 print "right"
-#             # 255 is what the console returns when there is no key press...
-#             elif key != 255:
-#                 print(key)
+def play_terminal():
+    print "Starting game..."
+    game = TwentyFortyEight(4, 4)
+    while True:
+        key = get()
+        if key == 5:
+            break
+        if key == -1:
+            continue
+        else:
+            game.move(key)
+    end_game(game)
 
 def main():
-    play_gui()
-
-# class _Getch:
-#     def __call__(self):
-#             fd = sys.stdin.fileno()
-#             old_settings = termios.tcgetattr(fd)
-#             try:
-#                 tty.setraw(sys.stdin.fileno())
-#                 ch = sys.stdin.read(3)
-#             finally:
-#                 termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-#             return ch
-
-# def get():
-#         inkey = _Getch()
-#         while(1):
-#             k=inkey()
-#             if k!='':break
-#         print repr(str(k))
-#         if k=='\x1b[A':
-#             print "up"
-#         elif k=='\x1b[B':
-#             print "down"
-#         elif k=='\x1b[C':
-#             print "right"
-#         elif k=='\x1b[D':
-#             print "left"
-#         else:
-#             print "not an arrow key!"
-
-# def main():
-#         for i in range(0,20):
-#             print ""
-#             get()
+    try:
+        play_terminal()
+    except:
+        print "End of game!"
 
 if __name__=='__main__':
         main()
