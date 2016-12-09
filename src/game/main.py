@@ -1,5 +1,7 @@
 from game import TwentyFortyEight
 import sys, termios, tty
+import random
+import time
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -64,7 +66,7 @@ def get(play):
         return -1
 
 def play_terminal(height, width):
-    play = TwentyFortyEight(height, height)
+    play = TwentyFortyEight(height, width)
 
     while True:
         key = get(play)
@@ -76,9 +78,28 @@ def play_terminal(height, width):
         else:
             play.move(key)
 
+def random_play(height, width):
+	play = TwentyFortyEight(height, width)
+
+	end = False
+
+	while not end:
+		time.sleep(1)
+		grid = play.get_state()	
+		moves = play.legal_moves(grid)
+		if moves == None:
+			end = True
+		else:
+			action = random.choice(moves)
+			play.move(action)
+			play.alert("Move executed! Rinse and repeat.")
+
+	play.end_game()
+
+
 def main():
     try:
-        play_terminal(4, 4)
+        random_play(4, 4)
     except:
         print "Some error occurred!"
 

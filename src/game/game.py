@@ -1,7 +1,5 @@
-# this code works on the IDE of the course
-#  http://www.codeskulptor.org/#user40_tB3zWKAKJL_4.py
 """
-Clone of 2048 game.
+2048 game
 """
 import random
 import sys, tty, termios
@@ -88,7 +86,18 @@ class TwentyFortyEight:
             col = start[1] + step * direction[1]
             res.append(self._grid[row][col])
         return res
-    
+
+    def simulate_cut(self, start, direction, steps, grid):
+        """
+        makes a list and return it
+        """
+        res = []
+        for step in range(steps):
+            row = start[0] + step * direction[0]
+            col = start[1] + step * direction[1]
+            res.append(grid[row][col])
+        return res   
+
     def merge(self, line):
         """
         Function that merges a single row or column in 2048.
@@ -139,27 +148,6 @@ class TwentyFortyEight:
             col = start[1] + step * direction[1]
             grid[row][col] = merged[step]
 
-        return grid
-    
-    def simulate_new_tile(self, grid):
-        """
-        Create a new tile in a randomly selected empty
-        square.  The tile should be 2 90% of the time and
-        4 10% of the time.
-        """
-        flg = True
-        col = 0
-        row = 0
-        while flg :
-            col = random.randrange(self._width)
-            row = random.randrange(self._height)
-            if grid[row][col] == 0 :
-                flg = False
-        if random.random() <= .1 :
-            grid[row][col] = 4
-        else :
-            grid[row][col] = 2
-
     def move(self, direction):
         """
         Move all tiles in the given direction and add
@@ -175,12 +163,44 @@ class TwentyFortyEight:
             self.score += sum_score
             if cutted != merged:
                 changed = True
-            self.modify(index,OFFSETS[direction], steps , merged)
+            self.modify(index, OFFSETS[direction], steps, merged)
         if changed:
+            self.new_tile()
+
+            # TODO: Beautify print to terminal here!
+            self.print_board()
+
+    def get_successor(self, direction, grid, score):
+        """
+        Move all tiles in the given direction and add
+        a new tile if any tiles moved.
+        """
+        steps = self._height
+        changed = False
+        if direction == RIGHT or direction == LEFT:
+            steps = self._width
+        for index in self._borders[direction]:
+            cutted = self.simulate_cut(index, OFFSETS[direction], steps, grid)
+            merged, sum_score = self.merge(cutted)
+            score += sum_score
+            if cutted != merged:
+                changed = True
+            self.simulate_modify(index, OFFSETS[direction], steps, merged, grid)
+            
+            # self.alert("Move completed.")
+        
+        if changed:
+            # self.alert("The board changed!")
+
             self.simulate_new_tile(grid)
-            return grid
+
+            # self.alert("A new tile was added.")
+
         else:
-            return None 
+            # self.alert("The board did not change.")
+            grid = None
+
+        return grid, score
 
     def get_state(self):
         return self._grid
@@ -188,45 +208,31 @@ class TwentyFortyEight:
     def get_score(self):
         return self.score
 
-    def get_successor(self, grid, direction, score):
-        """
-        Move all tiles in the given direction and add
-        a new tile if any tiles moved.
-        """
-        score
-
-        steps = self._height
-        changed = False
-        if direction == RIGHT or direction == LEFT:
-            steps = self._width
-        for index in self._borders[direction]:
-            cutted = self.cut(index, OFFSETS[direction], steps)
-            merged, sum_score = self.merge(cutted)
-            score += sum_score
-            if cutted != merged:
-                changed = True
-            grid = self.simulate_modify(index,OFFSETS[direction], steps , merged)
-        if changed:
-            self.new_tile()
-
-            # TODO: Beautify print to terminal here!
-            self.print_board()
-
-        if not changed:
-            return None
-
-        return grid, score
-
-    def legal_moves(self, grid):
+    def legal_moves(self, grid):        
         legal = []
-        for i in range(1,5):
-            result = self.get_successor(grid, i, 0)
+        for i in xrange(4):
+            self.alert("\nTesting move "+str(i+1)+"!")
+
+            result, _ = self.get_successor(i+1, grid, 0)
             if result != None:
-                legal.append(i)
+                legal.append(i+1)
+                self.alert("Move "+str(i+1)+" was appended as a legal move!") 
+
+        self.alert("All moves tested!")
+
+        if not legal:
+            return None
         return legal
 
-    def game_over(self, gride):
-        pass
+    # def final_state(self, grid):
+    #     legal = self.legal_moves(grid)
+
+    #     if legal == None:
+    #         final_grid = False
+    #     else:
+    #         final_grid = legal
+        
+    #     return final_grid
 
     def new_tile(self):
         """
@@ -244,8 +250,27 @@ class TwentyFortyEight:
                 flg = False
         if random.random() <= .1 :
             self._grid[row][col] = 4
-        else :
+        else:
             self._grid[row][col] = 2
+
+    def simulate_new_tile(self, grid):
+        """
+        Create a new tile in a randomly selected empty
+        square.  The tile should be 2 90% of the time and
+        4 10% of the time.
+        """
+        flg = True
+        col = 0
+        row = 0
+        while flg :
+            col = random.randrange(self._width)
+            row = random.randrange(self._height)
+            if grid[row][col] == 0 :
+                flg = False
+        if random.random() <= .1 :
+            grid[row][col] = 4
+        else:
+            grid[row][col] = 2
             
     def print_board(self):
         self.stdscr.clear()
@@ -275,6 +300,10 @@ class TwentyFortyEight:
         Return the value of the tile at position row, col.
         """
         return self._grid[row][col]
+
+    def alert(self, string):
+        self.stdscr.addstr(string+"\n")
+        self.stdscr.refresh()
 
 def main():
     print "Run the game from main.py"
