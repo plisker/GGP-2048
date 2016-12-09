@@ -37,6 +37,7 @@ class TwentyFortyEight:
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.prepare_terminal_output()
         self.score = 0
+        # self.final_print()
         self.print_board()
 
     def reset(self):
@@ -178,12 +179,6 @@ class TwentyFortyEight:
             self.stdscr.addstr(str(row)+"\n")       
         self.stdscr.refresh()
 
-        # self.stdscr.clear()
-        # print "Score:", self.score
-        # for row in self._grid:
-        #     print row
-        # self.stdscr.refresh()
-
     def final_print(self):
         print "Final Score: "+str(self.score)
         for row in self._grid:
@@ -203,75 +198,10 @@ class TwentyFortyEight:
         """
         Return the value of the tile at position row, col.
         """
-        return self._grid[row][col] 
-
-
-class _Getch:
-    def __call__(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-            if ch == 'q':
-                pass
-            else:
-                if ch == '\x1b':
-                    ch2 = sys.stdin.read(1)
-                    ch = ch+ch2
-                if ch == '\x1b[':
-                    ch3 = sys.stdin.read(1)
-                    ch = ch+ch3
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-
-def get():
-    inkey = _Getch()
-    while(1):
-        k=inkey()
-        if k!='':break
-    if k == '\x1b[A':
-        return UP
-    elif k == '\x1b[B':
-        return DOWN
-    elif k == '\x1b[C':
-        return RIGHT
-    elif k == '\x1b[D':
-        return LEFT
-    elif k == 'A':
-        return UP
-    elif k == 'B':
-        return DOWN
-    elif k == 'C':
-        return RIGHT
-    elif k == 'D':
-        return LEFT
-    elif k == 'q':
-        print "Quitting..."
-        return QUIT
-    else:
-        print "Not an arrow key! If you want to quit, press \'q\'"
-        print "You pressed", k
-        return -1
-
-def play_terminal():
-    game = TwentyFortyEight(4, 4)
-    while True:
-        key = get()
-        if key == 5:
-            game.end_game()
-            break
-        if key == -1:
-            continue
-        else:
-            game.move(key)
+        return self._grid[row][col]
 
 def main():
-    try:
-        play_terminal()
-    except:
-        print "Some error occurred!"
+    print "Run the game from main.py"
 
 if __name__=='__main__':
         main()
