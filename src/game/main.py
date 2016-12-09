@@ -84,7 +84,7 @@ def random_play(height, width):
 	end = False
 
 	while not end:
-		time.sleep(1)
+		# time.sleep(1)
 		grid = play.get_state()	
 		moves = play.legal_moves(grid)
 		if moves == None:

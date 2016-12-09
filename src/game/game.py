@@ -34,10 +34,10 @@ class TwentyFortyEight:
                    DOWN: [(self._height-1, col) for col in range(self._width)],
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
-        self.prepare_terminal_output()
+        # self.prepare_terminal_output()
         self.score = 0
-        # self.final_print()
-        self.print_board()
+        self.final_print()
+        # self.print_board()
 
     def reset(self):
         """
@@ -168,7 +168,7 @@ class TwentyFortyEight:
             self.new_tile()
 
             # TODO: Beautify print to terminal here!
-            self.print_board()
+            self.final_print()
 
     def get_successor(self, direction, grid, score):
         """
@@ -208,31 +208,24 @@ class TwentyFortyEight:
     def get_score(self):
         return self.score
 
-    def legal_moves(self, grid):        
+    def legal_moves(self, grid):
         legal = []
         for i in xrange(4):
-            self.alert("\nTesting move "+str(i+1)+"!")
+            test_grid = copy.deepcopy(grid)
+            # self.alert("\nTesting move "+str(i+1)+"!")
 
-            result, _ = self.get_successor(i+1, grid, 0)
+            result, _ = self.get_successor(i+1, test_grid, 0)
             if result != None:
                 legal.append(i+1)
-                self.alert("Move "+str(i+1)+" was appended as a legal move!") 
+                # self.alert("Move "+str(i+1)+" was appended as a legal move!") 
 
-        self.alert("All moves tested!")
+        # self.alert("All moves tested!")
 
-        if not legal:
-            return None
-        return legal
-
-    # def final_state(self, grid):
-    #     legal = self.legal_moves(grid)
-
-    #     if legal == None:
-    #         final_grid = False
-    #     else:
-    #         final_grid = legal
+        if legal == []:
+            self.alert("No more moves!")
+            legal = None
         
-    #     return final_grid
+        return legal
 
     def new_tile(self):
         """
@@ -285,7 +278,8 @@ class TwentyFortyEight:
             print row
 
     def end_game(self):
-        curses.endwin()
+        # curses.endwin()
+        print ""
         self.final_print()
 
 
@@ -302,8 +296,10 @@ class TwentyFortyEight:
         return self._grid[row][col]
 
     def alert(self, string):
-        self.stdscr.addstr(string+"\n")
-        self.stdscr.refresh()
+        # self.stdscr.addstr(string+"\n")
+        # self.stdscr.refresh()
+        print string
+        pass
 
 def main():
     print "Run the game from main.py"
