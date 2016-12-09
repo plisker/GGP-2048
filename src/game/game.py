@@ -4,7 +4,6 @@
 Clone of 2048 game.
 """
 import random
-# import poc_2048_gui
 import sys, tty, termios
 import curses
 
@@ -27,7 +26,6 @@ class TwentyFortyEight:
     """
     Class to run the game logic.
     """
-
     def __init__(self, grid_height, grid_width):
         self._height = grid_height
         self._width = grid_width
@@ -191,6 +189,10 @@ class TwentyFortyEight:
         for row in self._grid:
             print row
 
+    def end_game(self):
+        curses.endwin()
+        self.final_print()
+
     def set_tile(self, row, col, value):
         """
         Set the tile at position row, col to have the given value.
@@ -253,28 +255,23 @@ def get():
         print "You pressed", k
         return -1
 
-def end_game(game):
-    curses.endwin()
-    game.final_print()
-
 def play_terminal():
-    print "Starting game..."
     game = TwentyFortyEight(4, 4)
     while True:
         key = get()
         if key == 5:
+            game.end_game()
             break
         if key == -1:
             continue
         else:
             game.move(key)
-    end_game(game)
 
 def main():
     try:
         play_terminal()
     except:
-        print "End of game!"
+        print "Some error occurred!"
 
 if __name__=='__main__':
         main()
