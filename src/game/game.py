@@ -6,6 +6,7 @@ Clone of 2048 game.
 import random
 import sys, tty, termios
 import curses
+import copy
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -77,7 +78,7 @@ class TwentyFortyEight:
         """
         return self._width
 
-    def cut(self , start , direction , steps):
+    def cut(self, start, direction, steps):
         """
         makes a list and return it
         """
@@ -92,7 +93,7 @@ class TwentyFortyEight:
         """
         Function that merges a single row or column in 2048.
         """
-        sum_score = 0
+        score = 0
         result = []
         line_dimension = len(line)
 
@@ -105,7 +106,7 @@ class TwentyFortyEight:
                 if value == last_value:
                     new_tile = value*2
                     result[len(result)-1] = new_tile
-                    sum_score += new_tile
+                    score += new_tile
                     last_value = -1
                 else:
                     result.append(value)
@@ -118,8 +119,7 @@ class TwentyFortyEight:
             for _ in range(zeros):
                 result.append(0)
 
-        self.score += sum_score
-        return result
+        return result, score
 
     def modify(self, start, direction, steps, merged):
         """
@@ -129,7 +129,36 @@ class TwentyFortyEight:
             row = start[0] + step * direction[0]
             col = start[1] + step * direction[1]
             self._grid[row][col] = merged[step]
-        
+
+    def simulate_modify(self, start, direction, steps, merged, grid):
+        """
+        modifies the grid
+        """
+        for step in range(steps):
+            row = start[0] + step * direction[0]
+            col = start[1] + step * direction[1]
+            grid[row][col] = merged[step]
+
+        return grid
+    
+    def simulate_new_tile(self, grid):
+        """
+        Create a new tile in a randomly selected empty
+        square.  The tile should be 2 90% of the time and
+        4 10% of the time.
+        """
+        flg = True
+        col = 0
+        row = 0
+        while flg :
+            col = random.randrange(self._width)
+            row = random.randrange(self._height)
+            if grid[row][col] == 0 :
+                flg = False
+        if random.random() <= .1 :
+            grid[row][col] = 4
+        else :
+            grid[row][col] = 2
 
     def move(self, direction):
         """
@@ -142,16 +171,62 @@ class TwentyFortyEight:
             steps = self._width
         for index in self._borders[direction]:
             cutted = self.cut(index, OFFSETS[direction], steps)
-            merged = self.merge(cutted)
+            merged, sum_score = self.merge(cutted)
+            self.score += sum_score
             if cutted != merged:
                 changed = True
             self.modify(index,OFFSETS[direction], steps , merged)
+        if changed:
+            self.simulate_new_tile(grid)
+            return grid
+        else:
+            return None 
+
+    def get_state(self):
+        return self._grid
+
+    def get_score(self):
+        return self.score
+
+    def get_successor(self, grid, direction, score):
+        """
+        Move all tiles in the given direction and add
+        a new tile if any tiles moved.
+        """
+        score
+
+        steps = self._height
+        changed = False
+        if direction == RIGHT or direction == LEFT:
+            steps = self._width
+        for index in self._borders[direction]:
+            cutted = self.cut(index, OFFSETS[direction], steps)
+            merged, sum_score = self.merge(cutted)
+            score += sum_score
+            if cutted != merged:
+                changed = True
+            grid = self.simulate_modify(index,OFFSETS[direction], steps , merged)
         if changed:
             self.new_tile()
 
             # TODO: Beautify print to terminal here!
             self.print_board()
 
+        if not changed:
+            return None
+
+        return grid, score
+
+    def legal_moves(self, grid):
+        legal = []
+        for i in range(1,5):
+            result = self.get_successor(grid, i, 0)
+            if result != None:
+                legal.append(i)
+        return legal
+
+    def game_over(self, gride):
+        pass
 
     def new_tile(self):
         """
@@ -187,6 +262,7 @@ class TwentyFortyEight:
     def end_game(self):
         curses.endwin()
         self.final_print()
+
 
     def set_tile(self, row, col, value):
         """
