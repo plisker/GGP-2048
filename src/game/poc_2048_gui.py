@@ -88,4 +88,4 @@ def run_gui(game):
     Instantiate and run the GUI.
     """
     gui = GUI(game)
-    gui.start()
+    return gui._game

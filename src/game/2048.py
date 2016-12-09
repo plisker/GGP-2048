@@ -178,6 +178,11 @@ class TwentyFortyEight:
             self.stdscr.addstr(str(self._grid[i])+"\n")       
         self.stdscr.refresh()
 
+    def final_print(self):
+        print "Final Score: "+str(self.score)
+        for i in range(self._height):
+            print str(self._grid[i]) 
+
     def set_tile(self, row, col, value):
         """
         Set the tile at position row, col to have the given value.
@@ -192,10 +197,14 @@ class TwentyFortyEight:
 
 def main():
     try:
-        poc_2048_gui.run_gui(TwentyFortyEight(4, 4))
-        curses.endwin()
+        play = TwentyFortyEight(4, 4)
+        game = poc_2048_gui.run_gui(play)
     except:
         curses.endwin()
 
+    curses.endwin()
+    game.final_print()
 
 main()
+
+
