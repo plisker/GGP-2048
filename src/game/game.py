@@ -4,7 +4,6 @@
 Clone of 2048 game.
 """
 import random
-# import poc_2048_gui
 import sys, tty, termios
 import curses
 
@@ -27,7 +26,6 @@ class TwentyFortyEight:
     """
     Class to run the game logic.
     """
-
     def __init__(self, grid_height, grid_width):
         self._height = grid_height
         self._width = grid_width
@@ -39,6 +37,7 @@ class TwentyFortyEight:
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.prepare_terminal_output()
         self.score = 0
+        # self.final_print()
         self.print_board()
 
     def reset(self):
@@ -180,16 +179,14 @@ class TwentyFortyEight:
             self.stdscr.addstr(str(row)+"\n")       
         self.stdscr.refresh()
 
-        # self.stdscr.clear()
-        # print "Score:", self.score
-        # for row in self._grid:
-        #     print row
-        # self.stdscr.refresh()
-
     def final_print(self):
         print "Final Score: "+str(self.score)
         for row in self._grid:
             print row
+
+    def end_game(self):
+        curses.endwin()
+        self.final_print()
 
     def set_tile(self, row, col, value):
         """
@@ -201,80 +198,10 @@ class TwentyFortyEight:
         """
         Return the value of the tile at position row, col.
         """
-        return self._grid[row][col] 
-
-
-class _Getch:
-    def __call__(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-            if ch == 'q':
-                pass
-            else:
-                if ch == '\x1b':
-                    ch2 = sys.stdin.read(1)
-                    ch = ch+ch2
-                if ch == '\x1b[':
-                    ch3 = sys.stdin.read(1)
-                    ch = ch+ch3
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-
-def get():
-    inkey = _Getch()
-    while(1):
-        k=inkey()
-        if k!='':break
-    if k == '\x1b[A':
-        return UP
-    elif k == '\x1b[B':
-        return DOWN
-    elif k == '\x1b[C':
-        return RIGHT
-    elif k == '\x1b[D':
-        return LEFT
-    elif k == 'A':
-        return UP
-    elif k == 'B':
-        return DOWN
-    elif k == 'C':
-        return RIGHT
-    elif k == 'D':
-        return LEFT
-    elif k == 'q':
-        print "Quitting..."
-        return QUIT
-    else:
-        print "Not an arrow key! If you want to quit, press \'q\'"
-        print "You pressed", k
-        return -1
-
-def end_game(game):
-    curses.endwin()
-    game.final_print()
-
-def play_terminal():
-    print "Starting game..."
-    game = TwentyFortyEight(4, 4)
-    while True:
-        key = get()
-        if key == 5:
-            break
-        if key == -1:
-            continue
-        else:
-            game.move(key)
-    end_game(game)
+        return self._grid[row][col]
 
 def main():
-    try:
-        play_terminal()
-    except:
-        print "End of game!"
+    print "Run the game from main.py"
 
 if __name__=='__main__':
         main()
