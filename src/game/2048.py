@@ -6,6 +6,8 @@ Clone of 2048 game.
 import random
 import poc_2048_gui
 import sys
+import curses
+from curses import wrapper
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -34,6 +36,7 @@ class TwentyFortyEight:
                    DOWN: [(self._height-1, col) for col in range(self._width)],
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
+        self.prepare_terminal_output()
         self.score = 0
 
     def reset(self):
@@ -54,6 +57,12 @@ class TwentyFortyEight:
         for index in range(len(self._grid)):
             res+=str(self._grid[index])+"\n"
         return res
+
+    def prepare_terminal_output(self):
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        self.stdscr.keypad(True)
 
     def get_grid_height(self):
         """
@@ -111,7 +120,7 @@ class TwentyFortyEight:
         self.score += sum_score
         return result
 
-    def modify(self , start , direction , steps , merged):
+    def modify(self, start, direction, steps, merged):
         """
         modifies the grid
         """
@@ -137,8 +146,11 @@ class TwentyFortyEight:
                 changed = True
             self.modify(index,OFFSETS[direction], steps , merged)
         if changed:
-            self.print_score()
             self.new_tile()
+
+            # TODO: Beautify print to terminal here!
+            self.print_board()
+
 
     def new_tile(self):
         """
@@ -159,9 +171,12 @@ class TwentyFortyEight:
         else :
             self._grid[row][col] = 2
             
-    def print_score(self):
-        sys.stdout.write("Score: "+str(self.score)+"\r")
-        sys.stdout.flush()    
+    def print_board(self):
+        self.stdscr.clear()
+        self.stdscr.addstr("Score: "+str(self.score)+"\n")       
+        for i in range(self._height):
+            self.stdscr.addstr(str(self._grid[i])+"\n")       
+        self.stdscr.refresh()
 
     def set_tile(self, row, col, value):
         """
@@ -175,5 +190,12 @@ class TwentyFortyEight:
         """
         return self._grid[row][col] 
 
+def main():
+    try:
+        poc_2048_gui.run_gui(TwentyFortyEight(4, 4))
+        curses.endwin()
+    except:
+        curses.endwin()
 
-poc_2048_gui.run_gui(TwentyFortyEight(4, 4))
+
+main()
