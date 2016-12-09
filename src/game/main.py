@@ -99,7 +99,7 @@ def random_play(height, width):
 
 def main():
     try:
-        random_play(4, 4)
+        play_terminal(4, 4)
     except:
         print "Some error occurred!"
 

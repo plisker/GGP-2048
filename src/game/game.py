@@ -275,20 +275,29 @@ class TwentyFortyEight:
     def print_board(self):
         self.stdscr.clear()
         self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-        for row in self._grid:
-            self.stdscr.addstr(str(row)+"\n")       
+        # for row in self._grid:
+        #     self.stdscr.addstr(str(row)+"\n")       
+        # self.stdscr.refresh()
+
+        s = [[str(e) for e in row] for row in self._grid]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        self.stdscr.addstr('\n'.join(table))
         self.stdscr.refresh()
 
+
     def simple_print(self):
-        print "Score: "+str(self.score)
-        for row in self._grid:
-            print row
+        print "\nScore: "+str(self.score)
+        # for row in self._grid:
+        #     print row
+        self.pretty_grid_print()
 
     def end_game(self):
         if not EVERY_MOVE:
             curses.endwin()
         else:
-            print "\nGame complete!"
+            print "Game complete!"
         self.simple_print()
 
 
@@ -309,6 +318,13 @@ class TwentyFortyEight:
         # self.stdscr.refresh()
         # print string
         pass
+
+    def pretty_grid_print(self):
+        s = [[str(e) for e in row] for row in self._grid]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        print '\n'.join(table)
 
 def main():
     print "Run the game from main.py"
