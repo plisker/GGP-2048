@@ -23,6 +23,8 @@ OFFSETS = {UP: (1, 0),
 
 EVERY_MOVE = False
 
+QUIET_MODE = True
+
 class TwentyFortyEight:
     """
     Class to run the game logic.
@@ -37,11 +39,12 @@ class TwentyFortyEight:
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.score = 0
-        if EVERY_MOVE:
-            self.simple_print()
-        else:
-            self.prepare_terminal_output()
-            self.print_board()
+        if not QUIET_MODE:
+            if EVERY_MOVE:
+                self.simple_print()
+            else:
+                self.prepare_terminal_output()
+                self.print_board()
 
     def reset(self):
         """
@@ -271,34 +274,35 @@ class TwentyFortyEight:
         else:
             grid[row][col] = 2
             
-    def print_board(self):
-        pass
-        # self.stdscr.clear()
-        # self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-        # # for row in self._grid:
-        # #     self.stdscr.addstr(str(row)+"\n")       
-        # # self.stdscr.refresh()
+    def print_board(self)
+        if not QUIET_MODE:
+            self.stdscr.clear()
+            self.stdscr.addstr("Score: "+str(self.score)+"\n")       
+            # for row in self._grid:
+            #     self.stdscr.addstr(str(row)+"\n")       
+            # self.stdscr.refresh()
 
-        # s = [[str(e) for e in row] for row in self._grid]
-        # lens = [max(map(len, col)) for col in zip(*s)]
-        # fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-        # table = [fmt.format(*row) for row in s]
-        # self.stdscr.addstr('\n'.join(table))
-        # self.stdscr.refresh()
+            s = [[str(e) for e in row] for row in self._grid]
+            lens = [max(map(len, col)) for col in zip(*s)]
+            fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+            table = [fmt.format(*row) for row in s]
+            self.stdscr.addstr('\n'.join(table))
+            self.stdscr.refresh()
 
 
     def simple_print(self):
-        print "\nScore: "+str(self.score)
-        # for row in self._grid:
-        #     print row
-        self.pretty_grid_print()
+        if not QUIET_MODE:
+            print "\nScore: "+str(self.score)
+            # for row in self._grid:
+            #     print row
+            self.pretty_grid_print()
 
     def end_game(self):
         if not EVERY_MOVE:
             curses.endwin()
-        else:
-            print "Game complete!"
-        self.simple_print()
+        elif not QUIET_MODE:
+                print "Game complete!"
+                self.simple_print()
 
 
     def set_tile(self, row, col, value):
