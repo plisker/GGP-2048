@@ -94,12 +94,13 @@ def random_play(height, width):
 			play.move(action)
 			play.alert("Move executed! Rinse and repeat.")
 
+	final_score = play.get_score()
 	play.end_game()
-
+	return final_score
 
 def main():
     try:
-        play_terminal(4, 4)
+        random_play(4, 4)
     except:
         print "Some error occurred!"
 
