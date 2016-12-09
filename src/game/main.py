@@ -2,6 +2,7 @@ from game import TwentyFortyEight
 import sys, termios, tty
 import random
 import time
+import MCTS
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -9,6 +10,11 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 QUIT = 5
+
+# Number of iterations of MCTS
+ITERATIONS = 1
+
+TOTALNUMSIMULATIONS = 0
 
 class _Getch:
     def __call__(self, play):
@@ -98,11 +104,40 @@ def random_play(height, width):
 	play.end_game()
 	return final_score
 
+def getBestMove(state, n):
+    root = MCTS.UctTree(state)
+    TOTALNUMSIMULATIONS = 0
+    for _ in range(n):
+        simulationNode, path = root.select()
+        children = simulationNode.expand()
+        for child in children:
+            pathCopy = copy.deepcopy(path)
+            score = child.simulate()
+            child.backPropagate(score, pathCopy.append(child))
+        TOTALNUMSIMULATIONS += 1
+
+def mcts_play (height, width):
+    play = TwentyFortyEight(height,width)
+    tree = MCTS.Tree(play)
+    end = False
+
+    while not end:
+        grid = tree.get_state() 
+        moves = tree.legal_moves()
+        if moves == None:
+            end = True
+            play.alert("No moves left, end")
+        else:
+            action = getBestMove(play, ITERATIONS)
+            tree.move(action)
+            play.alert("Move executed! Rinse and repeat.")
+
 def main():
-    try:
-        random_play(4, 4)
-    except:
-        print "Some error occurred!"
+    # try:
+        # random_play(4, 4)
+        mcts_play(4,4)
+    # except:
+    #     print "Some error occurred!"
 
 if __name__=='__main__':
         main()

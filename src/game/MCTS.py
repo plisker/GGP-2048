@@ -10,64 +10,115 @@ RIGHT = 4
 
 DIRECTIONS = [UP, DOWN, LEFT, RIGHT]
 
-TOTALNUMSIMULATIONS = 0
 
-class Node:
-	def __init__(self, state, n):
+"""
+Class for a game tree with the information necessary for MCTS at each node.
+For now there is some hard coded 2048 information in it but not much.
+
+input: a game-state `state` i.e. a 2048 board object
+"""
+class Tree:
+	def __init__(self, state):
+		
+		# game state
 		self.state = state
-		self.n = n
+
+		# sum of values of all the simulations played through this node
 		self.value = 0
+
+		# number of simulations played through this node
 		self.numSimulations = 0
+
+		# children of this node that have been expanded, type: Tree list
 		self.expandedChildren = []
+
+		# keep track of which nodes of actions have been expanded
 		self.actionTaken = {UP:False, DOWN:False, LEFT:False, RIGHT:False}
 
-	def expandChild(self,move):
-		if not self.actionTake[move]:
-			newstate = copy.deepcopy(self.state)
-			newstate.move(move)
-			self.expandedChildren.append(newstate)
-			self.actionTaken[move] = True
-
-	def expandAllChildren(self):
+	""" 
+		Default expansion behavior is to expand all child nodes. 
+		This can be changed to expand 1-3 nodes to lessen computational load.
+	""" 
+	def expand(self):
 		children = []
 		for direction in DIRECTIONS:
-			self.expandChild(direction)
+			children.append(self.expandChild(direction))
+		return children
 
-	def run (self):
-		for i in range(self.n):
-			result = self.select()
-			score = self.simulate(result["nodeChoice"])
-			TOTALNUMSIMULATIONS += 1
-			self.backPropagate(score,result["path"])
-		
-		# return best initial action
+	""" 
+		TreePolicy algorithm
+	 	input: none
+	 	output: (node,path) where `node` is node chosen to simulate from
+	 			and `path` was the path used to get to `node`
+	"""
+	def select(self):
+		raise NotImplemented()
 
-	def backPropagate(self,score,path):
-		for node in path:
-			node.numSimulations += 1
-			node.value += score
+	"""
+		Default simulation behavior. Typically random.
+		input: none
+		output: score
+	"""
+	def simulate(self):
+		raise NotImplemented()
+
+	"""
+		Returns successor state after making `move`, doesn't expand that node
+	"""
+	def getChild(self,move):
+		newState = copy.deepcopy(self.state)
+		return newState.get_successor(move)
+
+	"""
+		Expands tree to include successor state after making `move`
+	"""
+	def expandChild(self,move):
+		if not self.actionTake[move]:
+			newState = self.getChild(move)
+			self.expandedChildren.append(newState)
+			self.actionTaken[move] = True
+			return newState
+
+	def incNumSimulations(self):
+		self.numSimulations += 1
+
+	def addValue(value):
+		self.value += value
 
 	def getNumSimulations(self):
 		return self.numSimulations
 
 	def getAvgValue(self):
 		if self.numSimulations == 0:
-			return None
+			return 0
 		else: 
 			return self.value / self.numSimulations
+
+	def get_state(self):
+		return self.state.get_state()
+
+	def legal_moves(self):
+		return self.state.legal_moves(self.get_state())
+
 
 	def getExpandedChildren(self):
 		return self.expandedChildren
 
-	def select(self):
-		raise NotImplemented()
+"""
+	Adds `score` to value of all nodes in `path`
+"""
+def backPropagate(self,score,path):
+	for node in path:
+		node.incNumSimulations()
+		node.addValue(score)
 
-	def simulate(self):
-		raise NotImplemented()
 
-class UBT_MCTS(Node):
-	def __init__(self,MCST_Node,state):
-		self = Node(state)
+"""
+	MCTS Tree with UCT tree policy and random-move simulation policy
+"""
+class UctTree(Tree):
+	def __init__(self,state):
+		Tree.__init__(self,state)
 
 	def upperConfidenceBound(self):
 		if self.numSimulations == 0:
@@ -75,29 +126,22 @@ class UBT_MCTS(Node):
 		else:
 			return self.getAvgValue() + math.sqrt((2 * math.log(TOTALNUMSIMULATIONS))/self.numSimulations)
 
-	# UBT policy
 	def select(self):
+		currentNode = self; 
+		bestUCB = self.upperConfidenceBound()
+		path = [currentNode] 
 		
-		currentNode = self
-		path = [currentNode]
+		while (len(currentNode.getExpandedChildren()) < 4):
+			for child in currentNode.getExpandedChildren():
 
-		while (currentNode.getExpandedChildren() != []):
-			bestUCB = None; 
-			bestChild = None; 
-			for child in currentNode.expandedChildren:
-				thisUCB = currentNode.upperConfidenceBound()
-				
-				if bestUCB == None:
+				thisUCB = child.upperConfidenceBound()
+				if (thisUCB > bestUCB) or (thisUCB == bestUCB and random.random() >= 0.5):
 					bestUCB = thisUCB
-					bestChild = child
-				elif (thisUCB == bestUCB and random.random() >= 0.5) or (thisUCB > bestUCB):
-					bestUCB = thisUCB
-					bestChild = child
+					currentNode = child
 
-			currentNode = bestChild
 			path.append(currentNode)
 
-		return {"nodeChoice":currentNode,"path":path}
+		return (currentNode,path)
 
 	def simulate(self):
 		randomMove = random.choice(DIRECTIONS)
@@ -111,4 +155,14 @@ class UBT_MCTS(Node):
 			currentNode = successor
 			successor = successor.getChild(randomMove)
 
-		return currentNode.state.getScore()		
+		return currentNode.state.getScore()
+
+
+
+
+
+
+
+
+
+

@@ -220,7 +220,6 @@ class TwentyFortyEight:
         for i in xrange(4):
             test_grid = copy.deepcopy(grid)
             # self.alert("\nTesting move "+str(i+1)+"!")
-
             result, _ = self.get_successor(i+1, test_grid, 0)
             if result != None:
                 legal.append(i+1)
@@ -273,18 +272,19 @@ class TwentyFortyEight:
             grid[row][col] = 2
             
     def print_board(self):
-        self.stdscr.clear()
-        self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-        # for row in self._grid:
-        #     self.stdscr.addstr(str(row)+"\n")       
-        # self.stdscr.refresh()
+        pass
+        # self.stdscr.clear()
+        # self.stdscr.addstr("Score: "+str(self.score)+"\n")       
+        # # for row in self._grid:
+        # #     self.stdscr.addstr(str(row)+"\n")       
+        # # self.stdscr.refresh()
 
-        s = [[str(e) for e in row] for row in self._grid]
-        lens = [max(map(len, col)) for col in zip(*s)]
-        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-        table = [fmt.format(*row) for row in s]
-        self.stdscr.addstr('\n'.join(table))
-        self.stdscr.refresh()
+        # s = [[str(e) for e in row] for row in self._grid]
+        # lens = [max(map(len, col)) for col in zip(*s)]
+        # fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        # table = [fmt.format(*row) for row in s]
+        # self.stdscr.addstr('\n'.join(table))
+        # self.stdscr.refresh()
 
 
     def simple_print(self):
