@@ -21,9 +21,8 @@ OFFSETS = {UP: (1, 0),
            LEFT: (0, 1),
            RIGHT: (0, -1)}
 
-EVERY_MOVE = False
-
-QUIET_MODE = True
+# 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
+EVERY_MOVE = -1
 
 class TwentyFortyEight:
     """
@@ -39,12 +38,12 @@ class TwentyFortyEight:
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.score = 0
-        if not QUIET_MODE:
-            if EVERY_MOVE:
-                self.simple_print()
-            else:
-                self.prepare_terminal_output()
-                self.print_board()
+
+        if EVERY_MOVE == 0:
+            self.simple_print()
+        elif EVERY_MOVE == 1:
+            self.prepare_terminal_output()
+            self.print_board()
 
     def reset(self):
         """
@@ -175,9 +174,9 @@ class TwentyFortyEight:
             self.new_tile()
 
             # TODO: Beautify print to terminal here!
-            if EVERY_MOVE:
+            if EVERY_MOVE == 0:
                 self.simple_print()
-            else:
+            elif EVERY_MOVE == 1:
                 self.print_board()
 
     def get_successor(self, direction, grid, score):
@@ -218,6 +217,7 @@ class TwentyFortyEight:
     def get_score(self):
         return self.score
 
+    # Can probably make more efficient by first checking for empty tiles...
     def legal_moves(self, grid):
         legal = []
         for i in xrange(4):
@@ -274,14 +274,10 @@ class TwentyFortyEight:
         else:
             grid[row][col] = 2
             
-    def print_board(self)
-        if not QUIET_MODE:
-            self.stdscr.clear()
-            self.stdscr.addstr("Score: "+str(self.score)+"\n")       
-            # for row in self._grid:
-            #     self.stdscr.addstr(str(row)+"\n")       
-            # self.stdscr.refresh()
 
+    def print_board(self):
+        if EVERY_MOVE != -1:
+            self.stdscr.clear()
             s = [[str(e) for e in row] for row in self._grid]
             lens = [max(map(len, col)) for col in zip(*s)]
             fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
@@ -289,21 +285,21 @@ class TwentyFortyEight:
             self.stdscr.addstr('\n'.join(table))
             self.stdscr.refresh()
 
-
     def simple_print(self):
-        if not QUIET_MODE:
+        if EVERY_MOVE != -1:
             print "\nScore: "+str(self.score)
-            # for row in self._grid:
-            #     print row
+            for row in self._grid:
+                print row
             self.pretty_grid_print()
 
     def end_game(self):
-        if not EVERY_MOVE:
-            curses.endwin()
-        elif not QUIET_MODE:
+        if EVERY_MOVE != -1:
+            if EVERY_MOVE == 1:
+                curses.endwin()
+            else:
                 print "Game complete!"
-                self.simple_print()
-
+            self.simple_print()
+            print "Highest tile:", self.highest_tile()
 
     def set_tile(self, row, col, value):
         """
@@ -318,17 +314,27 @@ class TwentyFortyEight:
         return self._grid[row][col]
 
     def alert(self, string):
-        # self.stdscr.addstr(string+"\n")
-        # self.stdscr.refresh()
-        # print string
-        pass
+        if EVERY_MOVE != -1:
+            self.stdscr.addstr(string+"\n")
+            self.stdscr.refresh()
+            print string
 
     def pretty_grid_print(self):
-        s = [[str(e) for e in row] for row in self._grid]
-        lens = [max(map(len, col)) for col in zip(*s)]
-        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-        table = [fmt.format(*row) for row in s]
-        print '\n'.join(table)
+        if EVERY_MOVE != -1:
+            s = [[str(e) for e in row] for row in self._grid]
+            lens = [max(map(len, col)) for col in zip(*s)]
+            fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+            table = [fmt.format(*row) for row in s]
+            print '\n'.join(table)
+
+    def highest_tile(self):
+        highest = -1
+        for row in self._grid:
+            for element in row:
+                if element > highest:
+                    highest = element
+        return highest
+
 
 def main():
     print "Run the game from main.py"

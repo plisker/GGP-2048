@@ -131,7 +131,10 @@ class UctTree(Tree):
 		bestUCB = self.upperConfidenceBound()
 		path = [currentNode] 
 		
-		while (len(currentNode.getExpandedChildren()) < 4):
+		counter = 1
+		while (currentNode.getExpandedChildren() == []):
+			print("select run #" + str(counter))
+			counter += 1
 			for child in currentNode.getExpandedChildren():
 
 				thisUCB = child.upperConfidenceBound()

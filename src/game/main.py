@@ -3,6 +3,7 @@ import sys, termios, tty
 import random
 import time
 import MCTS
+import numpy as np
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -53,7 +54,7 @@ def get(play):
     # Don't think this works!
     elif k == '\x1bO':
         play.stdscr.addstr("Not an valid move! Try again?\n")
-    	return -1
+        return -1
     elif k == 'A':
         return UP
     elif k == 'B':
@@ -85,24 +86,25 @@ def play_terminal(height, width):
             play.move(key)
 
 def random_play(height, width):
-	play = TwentyFortyEight(height, width)
+    play = TwentyFortyEight(height, width)
 
-	end = False
+    end = False
 
-	while not end:
-		# time.sleep(1)
-		grid = play.get_state()	
-		moves = play.legal_moves(grid)
-		if moves == None:
-			end = True
-		else:
-			action = random.choice(moves)
-			play.move(action)
-			play.alert("Move executed! Rinse and repeat.")
+    while not end:
+        # time.sleep(1)
+        grid = play.get_state()    
+        moves = play.legal_moves(grid)
+        if moves == None:
+            end = True
+        else:
+            action = random.choice(moves)
+            play.move(action)
+            play.alert("Move executed! Rinse and repeat.")
 
-	final_score = play.get_score()
-	play.end_game()
-	return final_score
+    final_score = play.get_score()
+    highest = play.highest_tile()
+    play.end_game()
+    return final_score, highest
 
 def getBestMove(state, n):
     root = MCTS.UctTree(state)
@@ -118,26 +120,72 @@ def getBestMove(state, n):
 
 def mcts_play (height, width):
     play = TwentyFortyEight(height,width)
-    tree = MCTS.Tree(play)
     end = False
 
     while not end:
-        grid = tree.get_state() 
-        moves = tree.legal_moves()
+        grid = play.get_state() 
+        moves = play.legal_moves(grid)
         if moves == None:
             end = True
             play.alert("No moves left, end")
         else:
             action = getBestMove(play, ITERATIONS)
-            tree.move(action)
+            play.move(action)
             play.alert("Move executed! Rinse and repeat.")
 
+
+def corner_play(height, width):
+    play = TwentyFortyEight(height, width)
+
+    end = False
+
+    while not end:
+        # time.sleep(1)
+        grid = play.get_state()    
+        moves = play.legal_moves(grid)
+        if moves == None:
+            end = True
+        else:
+            if 1 in moves:
+            	action = 1
+            elif 3 in moves:
+            	action = 3
+            elif 4 in moves:
+            	action = 4
+            else:
+            	action = 2
+            play.move(action)
+            play.alert("Move executed! Rinse and repeat.")
+
+    final_score = play.get_score()
+    highest = play.highest_tile()
+    play.end_game()
+    return final_score, highest
+
+def loop(n):
+    scores = []
+    highest = []
+    try:
+        for i in range(0,n):
+            if i%100 == 0:
+                print str(i)+" out of "+str(n)
+            score, high = corner_play(4, 4)
+            scores.append(score)
+            highest.append(high)
+    except:
+        print "Some error occurred!"
+    
+    scores = np.array(scores)
+    print "Mean of scores:", scores.mean()
+    print "Max tile of all games:", max(highest) 
+
+
 def main():
-    # try:
-        # random_play(4, 4)
-        mcts_play(4,4)
-    # except:
-    #     print "Some error occurred!"
+	# play_terminal(4, 4)
+    mcts_play(2,2)
+	# loop(1000)
 
 if __name__=='__main__':
         main()
+
+
