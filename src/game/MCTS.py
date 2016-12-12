@@ -10,10 +10,15 @@ RIGHT = 4
 
 
 """
-Class for a game tree with the information necessary for MCTS at each node.
-For now there is some hard coded 2048 information in it but not much.
+	Parent class for a game tree with the information necessary for MCTS
+	at each node. Each child node is itself another Tree instance in the tree.
+	The root node should be the only one with getLastMove = None.
 
-input: a game-state `state` i.e. a 2048 board object
+	The methods `select`, `expand` and `simulate` are left
+	should be defined in inheriting classes according to the tree policy,
+	expansion policy, and default simulation policy you'd like.
+
+	input: a game-state `state` i.e. a 2048 board object
 """
 class Tree:
 	def __init__(self, state, lastMove=None):
@@ -26,19 +31,39 @@ class Tree:
 
 		self.expandedChildren = [] # children of this node that have been expanded, type: Tree list
 
-		self.lastMove = lastMove # needed for the evaluation step
+		self.lastMove = lastMove # move that got us to this state
 
 		self.expanded = True
 
-	""" 
-		Default expansion behavior is to expand all child nodes. 
-		This can be changed to expand 1-3 nodes to lessen computational load.
 
+	""" 
+		Expansion policy. Typically simply either one or all nodes are expanded,
+		depending on computational resources.
+		
 		Input: None
 		Output: None
 	""" 
 	def expand(self):
 		raise NotImplemented()
+
+
+	""" 
+		Tree policy algorithm i.e. Upper Confidence Bound for Trees (UCT)
+	 	input: none
+	 	output: (node,path) where `node` is node chosen to simulate from
+	 			and `path` was the path used to get to `node`
+	"""
+	def select(self):
+		raise NotImplemented()
+
+	"""
+		Default simulation behavior. Typically random.
+		input: None
+		output: score
+	"""
+	def simulate(self):
+		raise NotImplemented()
+
 
 	"""
 		Adds `score` to value of all nodes in `path`
@@ -48,6 +73,10 @@ class Tree:
 			node.incNumSimulations()
 			node.addValue(score)
 
+	"""
+		Returns the best move, the move that leads to the child state with
+		the highest average value.
+	"""
 	def evaluate(self):
 		bestVal = 0
 		bestNode = None
@@ -58,24 +87,6 @@ class Tree:
 				bestVal = thisVal
 
 		return bestNode.getLastMove() 
-
-
-	""" 
-		TreePolicy algorithm
-	 	input: none
-	 	output: (node,path) where `node` is node chosen to simulate from
-	 			and `path` was the path used to get to `node`
-	"""
-	def select(self):
-		raise NotImplemented()
-
-	"""
-		Default simulation behavior. Typically random.
-		input: none
-		output: score
-	"""
-	def simulate(self):
-		raise NotImplemented()
 
 
 	"""
@@ -91,44 +102,62 @@ class Tree:
 		return self.numSimulations
 
 	"""
-		methods used by the ???
+		Output: average value of the node per simulation. 
+		Called by select() and evaluate()
 	"""
-	def legal_moves(self):
-		return self.state.legal_moves(self.get_state())
-
 	def getAvgValue(self):
 		if self.numSimulations == 0:
 			return 0
 		else: 
 			return self.value / self.numSimulations
 
-	def get_state(self):
-		return self.state.get_state()
-
-
-	def getExpandedChildren(self):
-		return self.expandedChildren
-
+	"""
+		Called by evaluate()
+	"""
 	def getLastMove(self):
 		return self.lastMove
+
+	"""
+		Called by select()
+	"""
+	def getExpandedChildren(self):
+		return self.expandedChildren
 
 	def expandable(self):
 		return self.expanded
 
 
 """
-	MCTS Tree with UCT tree policy and random-move simulation policy
+	MCTS Tree with Upper Confidence Boudns for Trees (UCT) tree policy, 
+	an expand all children expansion policy and random-move default 
+	simulation policy
 """
 class UctTree(Tree):
+	
 	def __init__(self,state,lastMove=None):
 		Tree.__init__(self,state,lastMove)
 
+	"""
+		Upper Confidence Bound equation
+		
+
+					 	      sqrt(2 log(n_all))
+	Value(state)		=	  	--------------
+									n_state
+	n_state is the number of simulations with moves including this node.
+	n_all is total number of simulations
+
+	if n_state = 0, this is understood to evaluate to infinity
+	"""
 	def upperConfidenceBound(self):
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
 			return self.getAvgValue() + math.sqrt((2 * math.log(TOTALNUMSIMULATIONS))/self.numSimulations)
 
+	"""
+	UCT. Selects nodes with the highest UCB value, breaking ties randomly
+	"""
 	def select(self):
 		currentNode = self; 
 		bestUCB = self.upperConfidenceBound()
@@ -147,6 +176,9 @@ class UctTree(Tree):
 			path.append(currentNode)
 		return (currentNode,path)
 
+	"""
+		Expands all children
+	"""
 	def expand(self):
 		children = []
 		for direction in [UP, DOWN, LEFT, RIGHT]:
@@ -163,6 +195,9 @@ class UctTree(Tree):
 
 		self.expanded = False
 
+	"""
+		Simulates a randomly played game from self
+	"""
 	def simulate(self):
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 		currentNode = self
