@@ -109,7 +109,7 @@ def random_play(height, width):
 
 def getBestMove(state):
     root = MCTS.UctTree(state)
-    for _ in range(ITERATIONS):
+    for _ in range(ITERATONS):
         simulationNode, path = root.select()
         simulationNode.expand()
         children = simulationNode.getExpandedChildren()

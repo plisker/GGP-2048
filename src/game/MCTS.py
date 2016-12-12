@@ -86,7 +86,10 @@ class Tree:
 				bestNode = child
 				bestVal = thisVal
 
-		return bestNode.getLastMove() 
+		if bestNode == None:
+			return random.choice([UP, DOWN, LEFT, RIGHT])
+		else:
+			return bestNode.getLastMove() 
 
 
 	"""
@@ -162,13 +165,13 @@ class UctTree(Tree):
 		currentNode = self; 
 		bestUCB = self.upperConfidenceBound()
 		path = [currentNode] 
-		# counter = 1
 
 		while (not currentNode.expandable()):
-			# print("select run #" + str(counter) + "on node: " + str(currentNode))
-			# counter += 1
+			
 			for child in currentNode.getExpandedChildren():
+
 				thisUCB = child.upperConfidenceBound()
+
 				if (thisUCB > bestUCB) or (thisUCB == bestUCB and random.random() >= 0.5):
 					bestUCB = thisUCB
 					currentNode = child
@@ -184,13 +187,9 @@ class UctTree(Tree):
 		for direction in [UP, DOWN, LEFT, RIGHT]:
 			stateCopy = copy.deepcopy(self.state)
 			newGrid,score = stateCopy.get_successor(direction, stateCopy._grid, stateCopy.get_score())
-			print "newGrid:" + str(newGrid)
 			
 			if newGrid != None:
-				newState = stateCopy.__class__(stateCopy._height(),stateCopy._width())
-				newState._grid = newGrid
-				newState.score = score
-				newNode = UctTree(newState, lastMove=direction)
+				newNode = UctTree(newGrid, lastMove=direction)
 				self.expandedChildren.append(newNode)
 
 		self.expanded = False
@@ -199,18 +198,19 @@ class UctTree(Tree):
 		Simulates a randomly playeds game from self
 	"""
 	def simulate(self):
+		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-		currentNode = self
-		# print currentNode.state
-		successor = currentNode.state.get_successor(randomMove, successor._grid, successor.getScore())
-
-		# Go until game ends
+		currentNodeState = copy.deepcopy(self.state)
+		currentScore = copy.deepcopy(self.state.get_score())
+		successor = currentNodeState.get_successor(randomMove, currentNodeState, currentScore)
+		
 		while successor != None:
+			currentNodeState = successor
 			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-			currentNode = successor
-			successor = successor.state.get_successor(randomMove, successor._grid, successor.getScore())
+			currentScore = successor.get_score()
+			successor = successor.state.get_successor(randomMove, currentNodeState, successor.get_score())
 
-		return currentNode.state.getScore()
+		return currentNodeState.getScore()
 
 
 

@@ -22,7 +22,7 @@ OFFSETS = {UP: (1, 0),
            RIGHT: (0, -1)}
 
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-EVERY_MOVE = 2
+EVERY_MOVE = -1
 
 class TwentyFortyEight:
     """
