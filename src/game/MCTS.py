@@ -21,7 +21,7 @@ RIGHT = 4
 	input: a game-state `state` i.e. a 2048 board object
 """
 class Tree:
-	def __init__(self, game, lastMove=None):
+	def __init__(self, game, state, lastMove=None):
 		
 		self.state = game._grid # game state
 
@@ -139,8 +139,8 @@ class Tree:
 """
 class UctTree(Tree):
 	
-	def __init__(self,game,lastMove=None):
-		Tree.__init__(self,game,lastMove)
+	def __init__(self,game,state,lastMove=None):
+		Tree.__init__(self,game,state,lastMove)
 
 	"""
 		Upper Confidence Bound equation
@@ -188,10 +188,11 @@ class UctTree(Tree):
 		children = []
 		for direction in [UP, DOWN, LEFT, RIGHT]:
 			stateCopy = copy.deepcopy(self.state)
-			newGrid,score = self.game.get_successor(direction, stateCopy._grid, stateCopy.get_score())
+			scoreCopy = copy.deepcopy(self.game.get_score())
+			newGrid,score = self.game.get_successor(direction, stateCopy, scoreCopy)
 			
 			if newGrid != None:
-				newNode = UctTree(newGrid, lastMove=direction)
+				newNode = UctTree(self.game, newGrid, lastMove=direction)
 				self.expandedChildren.append(newNode)
 
 		self.expanded = False
@@ -203,16 +204,17 @@ class UctTree(Tree):
 		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 		currentNodeState = copy.deepcopy(self.state)
-		currentScore = copy.deepcopy(self.state.get_score())
-		successor = self.game.get_successor(randomMove, currentNodeState, currentScore)
+		currentNodeScore = copy.deepcopy(self.game.get_score())
+
+		successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
 		
 		while successor != None:
 			currentNodeState = successor
+			currentNodeScore = successorScore
 			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-			currentScore = successor.get_score()
-			successor = self.game.get_successor(randomMove, currentNodeState, successor.get_score())
+			successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
 			
-		return currentNodeState.getScore()
+		return currentNodeScore
 
 
 

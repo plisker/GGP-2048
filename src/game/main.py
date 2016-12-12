@@ -15,7 +15,7 @@ RIGHT = 4
 QUIT = 5
 
 # Number of iterations of MCTS
-ITERATIONS = 100
+ITERATIONS = 10
 
 TOTALNUMSIMULATIONS = 0
 
@@ -108,7 +108,7 @@ def random_play(height, width):
     return final_score, highest
 
 def getBestMove(game, n):
-    root = MCTS.UctTree(game)
+    root = MCTS.UctTree(game, game._grid)
     for _ in range(int(math.floor(n/4))):
         simulationNode, path = root.select()
         simulationNode.expand()
@@ -116,6 +116,9 @@ def getBestMove(game, n):
         for child in children:
             score = child.simulate()
             fullpath = copy.deepcopy(path).append(child)
+
+            assert path != None 
+
             child.backPropagate(score, fullpath)
             TOTALNUMSIMULATIONS += 1
 
@@ -173,7 +176,7 @@ def loop(n):
             if i%100 == 0:
                 print str(i)+" out of "+str(n)
             # score, high = corner_play(4, 4)
-            score, high = mcts_play(4,4)
+            # score, high = mcts_play(4,4)
             # score, high = random_play(4,4)
             scores.append(score)
             highest.append(high)
@@ -189,8 +192,8 @@ def main():
     # corner_play(4,4)
     # random_play(4,4)
 	# play_terminal(4, 4)
-    # mcts_play(4,4)
-	loop(1000)
+    mcts_play(4,4)
+	# loop(1000)
 
 if __name__=='__main__':
         main()
