@@ -6,6 +6,7 @@ import MCTS
 import numpy as np
 import copy
 import math
+import constants
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -13,11 +14,6 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 QUIT = 5
-
-# Number of iterations of MCTS
-ITERATIONS = 10
-
-TOTALNUMSIMULATIONS = 0
 
 class _Getch:
     def __call__(self, play):
@@ -107,20 +103,22 @@ def random_play(height, width):
     play.end_game()
     return final_score, highest
 
-def getBestMove(game, n):
+def getBestMove(game):
+    # constants.TOTALNUMSIMULATIONS = 0
     root = MCTS.UctTree(game, game._grid)
-    for _ in range(int(math.floor(n/4))):
+    for i in range(constants.ITERATIONS):
+        # print "Iteration " + str(i+1) + " of " + str(constants.ITERATIONS)
         simulationNode, path = root.select()
         simulationNode.expand()
         children = simulationNode.getExpandedChildren()
         for child in children:
             score = child.simulate()
-            fullpath = copy.deepcopy(path).append(child)
+            fullpath = path + [child]
 
             assert path != None 
 
             child.backPropagate(score, fullpath)
-            TOTALNUMSIMULATIONS += 1
+            constants.TOTALNUMSIMULATIONS += 1
 
     return root.evaluate()
 
@@ -128,14 +126,19 @@ def mcts_play (height, width):
     play = TwentyFortyEight(height, width)
     end = False
 
+    # counter = 0
     while not end:
+        # print "Move #" + str(counter)
         grid = play.get_state() 
         moves = play.legal_moves(grid)
         if moves == None:
             end = True
         else:
-            action = getBestMove(play, ITERATIONS)
+            action = getBestMove(play)
             play.move(action)
+
+        # counter += 1
+
     final_score = play.get_score()
     highest = play.highest_tile()
     play.end_game()
@@ -173,10 +176,10 @@ def loop(n):
     highest = []
     try:
         for i in range(0,n):
-            if i%100 == 0:
-                print str(i)+" out of "+str(n)
+            # if i%1 == 0:
+            print str(i)+" out of "+str(n)
             # score, high = corner_play(4, 4)
-            # score, high = mcts_play(4,4)
+            score, high = mcts_play(4,4)
             # score, high = random_play(4,4)
             scores.append(score)
             highest.append(high)
@@ -192,8 +195,8 @@ def main():
     # corner_play(4,4)
     # random_play(4,4)
 	# play_terminal(4, 4)
-    mcts_play(4,4)
-	# loop(1000)
+    # mcts_play(4,4)
+	loop(10)
 
 if __name__=='__main__':
         main()

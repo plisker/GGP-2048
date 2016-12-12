@@ -1,6 +1,7 @@
 import copy
 import math
 import random
+import constants
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -100,7 +101,7 @@ class Tree:
 	def incNumSimulations(self):
 		self.numSimulations += 1
 
-	def addValue(value):
+	def addValue(self,value):
 		self.value += value
 
 	def getNumSimulations(self):
@@ -158,28 +159,33 @@ class UctTree(Tree):
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
-			return self.getAvgValue() + math.sqrt((2 * math.log(TOTALNUMSIMULATIONS))/self.numSimulations)
+			return self.getAvgValue() + math.sqrt((200 * math.log(constants.TOTALNUMSIMULATIONS))/self.numSimulations)
 
 	"""
 		UCT. Selects nodes with the highest UCB value, breaking ties randomly
 	"""
 	def select(self):
-		currentNode = self; 
-		bestUCB = self.upperConfidenceBound()
-		path = [currentNode] 
+		currentNode = self
+		path = [self]
 
 		while (not currentNode.expandable()):
-			
-			for child in currentNode.getExpandedChildren():
-
-				thisUCB = child.upperConfidenceBound()
-
-				if (thisUCB > bestUCB) or (thisUCB == bestUCB and random.random() >= 0.5):
-					bestUCB = thisUCB
-					currentNode = child
-
+			choices = currentNode.getExpandedChildren()
+			currentNode = choices[0]
+			maxUCB = currentNode.upperConfidenceBound()
+			for choice in choices:
+				thisUCB = choice.upperConfidenceBound()
+				if thisUCB > maxUCB:
+					currentNode = choice
+					maxUCB = thisUCB
+				elif thisUCB == maxUCB:
+					currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
 			path.append(currentNode)
-		return (currentNode,path)
+
+		# print("We are " + str(len(path)) + " levels deep.")
+		return currentNode,path
+
+
+
 
 	"""
 		Expands all children
@@ -198,7 +204,7 @@ class UctTree(Tree):
 		self.expanded = False
 
 	"""
-		Simulates a randomly playeds game from self
+		Simulates a randomly played game from self
 	"""
 	def simulate(self):
 		
