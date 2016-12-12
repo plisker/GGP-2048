@@ -8,8 +8,6 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 
-DIRECTIONS = [UP, DOWN, LEFT, RIGHT]
-
 
 """
 Class for a game tree with the information necessary for MCTS at each node.
@@ -18,32 +16,49 @@ For now there is some hard coded 2048 information in it but not much.
 input: a game-state `state` i.e. a 2048 board object
 """
 class Tree:
-	def __init__(self, state):
+	def __init__(self, state, lastMove=None):
 		
-		# game state
-		self.state = state
+		self.state = state # game state
+		
+		self.value = 0 # sum of values of all the simulations played through this node
+		
+		self.numSimulations = 0 # number of simulations played through this node
 
-		# sum of values of all the simulations played through this node
-		self.value = 0
+		self.expandedChildren = [] # children of this node that have been expanded, type: Tree list
 
-		# number of simulations played through this node
-		self.numSimulations = 0
+		self.lastMove = lastMove # needed for the evaluation step
 
-		# children of this node that have been expanded, type: Tree list
-		self.expandedChildren = []
-
-		# keep track of which nodes of actions have been expanded
-		self.actionTaken = {UP:False, DOWN:False, LEFT:False, RIGHT:False}
+		self.expanded = True
 
 	""" 
 		Default expansion behavior is to expand all child nodes. 
 		This can be changed to expand 1-3 nodes to lessen computational load.
+
+		Input: None
+		Output: None
 	""" 
 	def expand(self):
-		children = []
-		for direction in DIRECTIONS:
-			children.append(self.expandChild(direction))
-		return children
+		raise NotImplemented()
+
+	"""
+		Adds `score` to value of all nodes in `path`
+	"""
+	def backPropagate(self,score,path):
+		for node in path:
+			node.incNumSimulations()
+			node.addValue(score)
+
+	def evaluate(self):
+		bestVal = 0
+		bestNode = None
+		for child in self.expandedChildren:
+			thisVal = child.getAvgValue()
+			if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
+				bestNode = child
+				bestVal = thisVal
+
+		return bestNode.getLastMove() 
+
 
 	""" 
 		TreePolicy algorithm
@@ -62,23 +77,10 @@ class Tree:
 	def simulate(self):
 		raise NotImplemented()
 
-	"""
-		Returns successor state after making `move`, doesn't expand that node
-	"""
-	def getChild(self,move):
-		newState = copy.deepcopy(self.state)
-		return newState.get_successor(move)
 
 	"""
-		Expands tree to include successor state after making `move`
+		methods used by the back propagation step
 	"""
-	def expandChild(self,move):
-		if not self.actionTake[move]:
-			newState = self.getChild(move)
-			self.expandedChildren.append(newState)
-			self.actionTaken[move] = True
-			return newState
-
 	def incNumSimulations(self):
 		self.numSimulations += 1
 
@@ -87,6 +89,12 @@ class Tree:
 
 	def getNumSimulations(self):
 		return self.numSimulations
+
+	"""
+		methods used by the ???
+	"""
+	def legal_moves(self):
+		return self.state.legal_moves(self.get_state())
 
 	def getAvgValue(self):
 		if self.numSimulations == 0:
@@ -97,28 +105,23 @@ class Tree:
 	def get_state(self):
 		return self.state.get_state()
 
-	def legal_moves(self):
-		return self.state.legal_moves(self.get_state())
-
 
 	def getExpandedChildren(self):
 		return self.expandedChildren
 
-"""
-	Adds `score` to value of all nodes in `path`
-"""
-def backPropagate(self,score,path):
-	for node in path:
-		node.incNumSimulations()
-		node.addValue(score)
+	def getLastMove(self):
+		return self.lastMove
+
+	def expandable(self):
+		return self.expanded
 
 
 """
 	MCTS Tree with UCT tree policy and random-move simulation policy
 """
 class UctTree(Tree):
-	def __init__(self,state):
-		Tree.__init__(self,state)
+	def __init__(self,state,lastMove=None):
+		Tree.__init__(self,state,lastMove)
 
 	def upperConfidenceBound(self):
 		if self.numSimulations == 0:
@@ -130,33 +133,47 @@ class UctTree(Tree):
 		currentNode = self; 
 		bestUCB = self.upperConfidenceBound()
 		path = [currentNode] 
-		
-		counter = 1
-		while (currentNode.getExpandedChildren() == []):
-			print("select run #" + str(counter))
-			counter += 1
-			for child in currentNode.getExpandedChildren():
+		# counter = 1
 
+		while (not currentNode.expandable()):
+			# print("select run #" + str(counter) + "on node: " + str(currentNode))
+			# counter += 1
+			for child in currentNode.getExpandedChildren():
 				thisUCB = child.upperConfidenceBound()
 				if (thisUCB > bestUCB) or (thisUCB == bestUCB and random.random() >= 0.5):
 					bestUCB = thisUCB
 					currentNode = child
 
 			path.append(currentNode)
-
 		return (currentNode,path)
 
-	def simulate(self):
-		randomMove = random.choice(DIRECTIONS)
+	def expand(self):
+		children = []
+		for direction in [UP, DOWN, LEFT, RIGHT]:
+			stateCopy = copy.deepcopy(self.state)
+			newGrid,score = stateCopy.get_successor(direction, stateCopy._grid, stateCopy.get_score())
+			print "newGrid:" + str(newGrid)
+			
+			if newGrid != None:
+				newState = stateCopy.__class__(stateCopy._height(),stateCopy._width())
+				newState._grid = newGrid
+				newState.score = score
+				newNode = UctTree(newState, lastMove=direction)
+				self.expandedChildren.append(newNode)
 
+		self.expanded = False
+
+	def simulate(self):
+		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 		currentNode = self
-		successor = self.getChild(randomMove)
+		# print currentNode.state
+		successor = currentNode.state.get_successor(randomMove, successor._grid, successor.getScore())
 
 		# Go until game ends
 		while successor != None:
-			randomMove = random.choice(DIRECTIONS)
+			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 			currentNode = successor
-			successor = successor.getChild(randomMove)
+			successor = successor.state.get_successor(randomMove, successor._grid, successor.getScore())
 
 		return currentNode.state.getScore()
 

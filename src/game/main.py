@@ -4,6 +4,7 @@ import random
 import time
 import MCTS
 import numpy as np
+import copy
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -107,10 +108,10 @@ def random_play(height, width):
 
 def getBestMove(state, n):
     root = MCTS.UctTree(state)
-    TOTALNUMSIMULATIONS = 0
     for _ in range(n):
         simulationNode, path = root.select()
-        children = simulationNode.expand()
+        simulationNode.expand()
+        children = simulationNode.getExpandedChildren()
         for child in children:
             pathCopy = copy.deepcopy(path)
             score = child.simulate()
@@ -131,7 +132,6 @@ def mcts_play (height, width):
             action = getBestMove(play, ITERATIONS)
             play.move(action)
             play.alert("Move executed! Rinse and repeat.")
-
 
 def corner_play(height, width):
     play = TwentyFortyEight(height, width)
@@ -179,9 +179,10 @@ def loop(n):
 
 
 def main():
-    corner_play(4,4)
+    # corner_play(4,4)
+    # random_play(4,4)
 	# play_terminal(4, 4)
-    # mcts_play(2,2)
+    mcts_play(2,2)
 	# loop(1000)
 
 if __name__=='__main__':
