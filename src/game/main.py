@@ -5,6 +5,7 @@ import time
 import MCTS
 import numpy as np
 import copy
+import math
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -108,7 +109,7 @@ def random_play(height, width):
 
 def getBestMove(state, n):
     root = MCTS.UctTree(state)
-    for _ in range(n):
+    for _ in range(math.floor(n/4)):
         simulationNode, path = root.select()
         simulationNode.expand()
         children = simulationNode.getExpandedChildren()
@@ -116,7 +117,7 @@ def getBestMove(state, n):
             pathCopy = copy.deepcopy(path)
             score = child.simulate()
             child.backPropagate(score, pathCopy.append(child))
-        TOTALNUMSIMULATIONS += 1
+            TOTALNUMSIMULATIONS += 1
 
 def mcts_play (height, width):
     play = TwentyFortyEight(height, width)
@@ -129,7 +130,7 @@ def mcts_play (height, width):
             end = True
             play.alert("No moves left, end")
         else:
-            action = getBestMove(play, ITERATIONS)
+            action = getBestMove(play._grid, ITERATIONS)
             play.move(action)
             play.alert("Move executed! Rinse and repeat.")
 

@@ -141,13 +141,13 @@ class UctTree(Tree):
 		Upper Confidence Bound equation
 		
 
-					 	      sqrt(2 log(n_all))
-	Value(state)		=	  	--------------
-									n_state
-	n_state is the number of simulations with moves including this node.
-	n_all is total number of simulations
+						 	      sqrt(2 log(n_all))
+		Value(state)		=	  	--------------
+										n_state
+		n_state is the number of simulations with moves including this node.
+		n_all is total number of simulations
 
-	if n_state = 0, this is understood to evaluate to infinity
+		if n_state = 0, this is understood to evaluate to infinity
 	"""
 	def upperConfidenceBound(self):
 		if self.numSimulations == 0:
@@ -156,7 +156,7 @@ class UctTree(Tree):
 			return self.getAvgValue() + math.sqrt((2 * math.log(TOTALNUMSIMULATIONS))/self.numSimulations)
 
 	"""
-	UCT. Selects nodes with the highest UCB value, breaking ties randomly
+		UCT. Selects nodes with the highest UCB value, breaking ties randomly
 	"""
 	def select(self):
 		currentNode = self; 
@@ -196,7 +196,7 @@ class UctTree(Tree):
 		self.expanded = False
 
 	"""
-		Simulates a randomly played game from self
+		Simulates a randomly playeds game from self
 	"""
 	def simulate(self):
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
