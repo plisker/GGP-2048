@@ -22,7 +22,7 @@ OFFSETS = {UP: (1, 0),
            RIGHT: (0, -1)}
 
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-EVERY_MOVE = -1
+EVERY_MOVE = 2
 
 class TwentyFortyEight:
     """
@@ -39,11 +39,10 @@ class TwentyFortyEight:
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
         self.score = 0
 
-        if EVERY_MOVE == 0:
-            self.simple_print()
-        elif EVERY_MOVE == 1:
+        if EVERY_MOVE == 1:
             self.prepare_terminal_output()
-            self.print_board()
+        
+        self.board_print()
 
     def reset(self):
         """
@@ -172,12 +171,7 @@ class TwentyFortyEight:
             self.modify(index, OFFSETS[direction], steps, merged)
         if changed:
             self.new_tile()
-
-            # TODO: Beautify print to terminal here!
-            if EVERY_MOVE == 0:
-                self.simple_print()
-            elif EVERY_MOVE == 1:
-                self.print_board()
+            self.board_print()
 
     def get_successor(self, direction, grid, score):
         """
@@ -231,7 +225,7 @@ class TwentyFortyEight:
         # self.alert("All moves tested!")
 
         if legal == []:
-            self.alert("No more moves!")
+            # self.alert("No more moves!")
             legal = None
         
         return legal
@@ -273,31 +267,38 @@ class TwentyFortyEight:
             grid[row][col] = 4
         else:
             grid[row][col] = 2
-            
+    
+    def board_print(self):
+        if EVERY_MOVE == 0:
+            self.simple_print()
+        if EVERY_MOVE == 1:
+            self.complex_print()
+        if EVERY_MOVE == 2 or EVERY_MOVE == -1:
+            pass
 
-    def print_board(self):
-        if EVERY_MOVE != -1:
-            self.stdscr.clear()
-            s = [[str(e) for e in row] for row in self._grid]
-            lens = [max(map(len, col)) for col in zip(*s)]
-            fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-            table = [fmt.format(*row) for row in s]
-            self.stdscr.addstr('\n'.join(table))
-            self.stdscr.refresh()
+    def complex_print(self):
+        self.stdscr.clear()
+        table = self.pretty_grid_print()
+        self.stdscr.addstr('\n'.join(table))
+        self.stdscr.refresh()
 
     def simple_print(self):
-        if EVERY_MOVE != -1:
-            print "\nScore: "+str(self.score)
-            for row in self._grid:
-                print row
-            self.pretty_grid_print()
+        print "\nScore: "+str(self.score)
+        table = self.pretty_grid_print()
+        print '\n'.join(table)
+
+    def pretty_grid_print(self):
+        s = [[str(e) for e in row] for row in self._grid]
+        lens = [max(map(len, col)) for col in zip(*s)]
+        fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+        table = [fmt.format(*row) for row in s]
+        return table
 
     def end_game(self):
         if EVERY_MOVE != -1:
             if EVERY_MOVE == 1:
                 curses.endwin()
-            else:
-                print "Game complete!"
+            print "Game complete!"
             self.simple_print()
             print "Highest tile:", self.highest_tile()
 
@@ -314,18 +315,11 @@ class TwentyFortyEight:
         return self._grid[row][col]
 
     def alert(self, string):
-        if EVERY_MOVE != -1:
+        if EVERY_MOVE == 1:
             self.stdscr.addstr(string+"\n")
             self.stdscr.refresh()
+        else:
             print string
-
-    def pretty_grid_print(self):
-        if EVERY_MOVE != -1:
-            s = [[str(e) for e in row] for row in self._grid]
-            lens = [max(map(len, col)) for col in zip(*s)]
-            fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
-            table = [fmt.format(*row) for row in s]
-            print '\n'.join(table)
 
     def highest_tile(self):
         highest = -1

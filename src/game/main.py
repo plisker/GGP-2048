@@ -99,7 +99,6 @@ def random_play(height, width):
         else:
             action = random.choice(moves)
             play.move(action)
-            play.alert("Move executed! Rinse and repeat.")
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -119,7 +118,7 @@ def getBestMove(state, n):
         TOTALNUMSIMULATIONS += 1
 
 def mcts_play (height, width):
-    play = TwentyFortyEight(height,width)
+    play = TwentyFortyEight(height, width)
     end = False
 
     while not end:
@@ -155,7 +154,6 @@ def corner_play(height, width):
             else:
             	action = 2
             play.move(action)
-            play.alert("Move executed! Rinse and repeat.")
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -181,8 +179,9 @@ def loop(n):
 
 
 def main():
+    corner_play(4,4)
 	# play_terminal(4, 4)
-    mcts_play(2,2)
+    # mcts_play(2,2)
 	# loop(1000)
 
 if __name__=='__main__':
