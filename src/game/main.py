@@ -15,6 +15,8 @@ LEFT = 3
 RIGHT = 4
 QUIT = 5
 
+DEBUG = 0
+
 class _Getch:
     def __call__(self, play):
         fd = sys.stdin.fileno()
@@ -106,32 +108,70 @@ def random_play(height, width):
     highest = play.highest_tile()
     play.end_game()
     return final_score, highest
+def mcts_simple(game):
+    root = MCTS.UctTree(game, game.get_state())
+
+    for i in range(constants.ITERATIONS):
+        simulationNode, path = root.select()
+        
+        score = simulationNode.simulate()
+        
+        simulationNode.backPropagate(score, path)
+
+        constants.TOTALNUMSIMULATIONS += 1
+
+    # return the direction of the child of root with the highest average value
+    return root.evaluate()
+
+def debug_print(string, force=False):
+    if DEBUG == 1 or force:
+        print string
 
 def mcts(game):
-
     # create root node with start state
     root = MCTS.UctTree(game, game.get_state())
 
     # while within our computational budget (ITERATIONS)
     for i in range(constants.ITERATIONS):
-        # print "Iteration " + str(i+1) + " of " + str(constants.ITERATIONS)
+        debug_print(" ")
+        debug_print("-------------------------------------------")
+        debug_print("Iteration " + str(i+1) + " of " + str(constants.ITERATIONS))
         
         # use tree policy to select most urgent expandable node
         simulationNode, path = root.select()
+        if DEBUG == 1:
+            for i,node in enumerate(path):
+                debug_print("chose " + str(i) + ": " + str(node))
+
+        debug_print ("simulation node: " + str(simulationNode) + " at depth " + str(len(path)))
+        
+        # if simulationNode.expandable():
+            # raise Exception("selected unexpandable node")
 
         # expand that node and retrieve its children
         simulationNode.expand()
+
         children = simulationNode.getExpandedChildren()
+        if children == []:
+            debug_print("NO CHILDREN EXPANDED")
         
+        debug_print("expanded nodes: " + str(children))
+
         # for each of the selected node's expanded children
-        for child in children:
+        for i,child in enumerate(children):
+
+            debug_print("simulating from " + str(i+1) + "th expanded node")
             
             # simulate a game till end
             score = child.simulate()
+
+            debug_print("estimated score from " + str(i+1) "th child:"+ str(score))
             
             # back-propagate the final score into the value of all nodes in 
             # the path to the selected node
             fullpath = path + [child]
+
+            debug_print("propagating score through path: " + str(fullpath))
             child.backPropagate(score, fullpath)
 
             constants.TOTALNUMSIMULATIONS += 1
@@ -140,24 +180,28 @@ def mcts(game):
     return root.evaluate()
 
 def mcts_play (height, width):
+    debug_print("playing with " + str(constants.ITERATIONS) + " iterations", force=True)
     play = TwentyFortyEight(height, width)
 
-    # counter = 1
+    counter = 1
 
     # Play until end of game
     while True:
-        
-        # print ("Move #" + str(counter))
         # check for end of game
         grid = copy.deepcopy(play.get_state())
         moves = play.legal_moves(grid)
         if moves == None:
             break
-        
+    
+        debug_print("*******************************")
+        debug_print("*******************************")
+        debug_print("Move #" + str(counter))
         # select next action using mcts and execute
         action = mcts(play)
+        # action = mcts_simple(play)
         play.move(action)
-        # counter += 1
+        counter += 1
+        debug_print(" ")
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -217,8 +261,8 @@ def main():
     # corner_play(4,4)
     # random_play(4,4)
 	# play_terminal(4, 4)
-    # mcts_play(4,4)
-	loop(10)
+    mcts_play(4,4)
+	# loop(10)
 
 if __name__=='__main__':
     main()

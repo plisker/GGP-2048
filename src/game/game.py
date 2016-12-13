@@ -25,7 +25,7 @@ OFFSETS = {UP: (1, 0),
 
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
 # do not choose 1 (current move) with mcts
-EVERY_MOVE = 2
+EVERY_MOVE = 0
 
 
 class TwentyFortyEight:
@@ -205,6 +205,7 @@ class TwentyFortyEight:
 
         else:
             # self.alert("The board did not change.")
+            # print "BOARD DID NOT CHANGE"
             grid = None
 
         return grid, score

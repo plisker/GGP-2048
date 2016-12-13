@@ -12,7 +12,7 @@ RIGHT = 4
 # UCTCONSTANT = random.randint(2,10000)
 # print "k = sqrt(" + str(UCTCONSTANT) + ")"
 UCTCONSTANT = 5000 / math.sqrt(2)
-print "k = "  + str(UCTCONSTANT)
+# print "k = "  + str(UCTCONSTANT)
 # print "robust child run"
 
 """
@@ -41,6 +41,8 @@ class Tree:
 
 		self.lastMove = lastMove # move that got us to this state
 
+		self.expanded = False
+
 	""" 
 		Expansion policy. Typically simply either one or all nodes are expanded,
 		depending on computational resources.
@@ -62,7 +64,7 @@ class Tree:
 		raise NotImplemented()
 
 	"""
-		Default simulation behavior. Typically random.
+		'Rollout policy' i.e. default simulation behavior. Typically random.
 		input: None
 		output: score
 	"""
@@ -83,7 +85,7 @@ class Tree:
 		the highest average value.
 	"""
 	def evaluate(self):
-		bestVal = 0
+		bestVal = -1
 		bestNode = None
 		for child in self.expandedChildren:
 			thisVal = child.getAvgValue() # max child
@@ -137,7 +139,14 @@ class Tree:
 		return self.expandedChildren
 
 	def expandable(self):
-		return self.getExpandedChildren() == []
+		successors = []
+		for direction in [UP,DOWN,LEFT,RIGHT]:
+			successor,_ = self.game.get_successor(direction, copy.deepcopy(self.state), self.game.get_score())
+			if successor != None:
+				successors.append(successor)
+		is_terminal = (successors == [])
+
+		return (self.expanded and is_terminal)
 
 
 
@@ -160,9 +169,10 @@ class UctTree(Tree):
 										   n_state
 		n_state is the number of simulations with moves including this node.
 		n_all is total number of simulations
+		
 		k is a constant, to be tuned
 
-		if n_state = 0, this is understood to evaluate to infinity
+		if n_state = 0, Value(state) is understood to evaluate to infinity
 	"""
 	def upperConfidenceBound(self):
 		k = UCTCONSTANT
@@ -178,32 +188,75 @@ class UctTree(Tree):
 		UCT. Selects nodes with the highest UCB value, breaking ties randomly
 	"""
 	def select(self):
-		currentNode = self
-		path = [self]
-		# print currentNode.expandable()
-		while (not currentNode.expandable()):
-			choices = currentNode.getExpandedChildren()
-			currentNode = choices[0]
-			maxUCB = currentNode.upperConfidenceBound()
-			for choice in choices:
-				if (not choice.expandable()):
-					thisUCB = choice.upperConfidenceBound()
-					if thisUCB > maxUCB:
-						currentNode = choice
-						maxUCB = thisUCB
-					elif thisUCB == maxUCB:
-						currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
+		# initialized search at root (this method is meant for the root node), thus self is the root
+		current_node = self
+		path = [current_node]
+		
+		# Get children of current_node so we can choose among them
+		children = current_node.getExpandedChildren()
+		
+		# We want to select the first we in encounter in our search non-terminal node that we can expand
+		while (children != []):
+			# print "are children:" + str(children)
+			# Get children of current_node so we can choose among them
+			children = current_node.getExpandedChildren()
+			# assert (children != []) # definitely gonna be triggered
 
-			path.append(currentNode)
+			maxUCB = -1
 
-		# print("We are " + str(len(path)) + " levels deep.")
-		return currentNode,path
+			# choose to descend unto the child with highest UCB, break ties by chance
+			for child in children:
+				thisUCB = child.upperConfidenceBound()
+				if thisUCB > maxUCB:
+					current_node = child
+					maxUCB = thisUCB
+				elif thisUCB == maxUCB:
+					current_node,maxUCB = random.choice([(current_node,maxUCB),(child,thisUCB)])
+
+			# append each chosen node to path
+			path = path + [current_node]
+
+			# update children
+			children = current_node.getExpandedChildren()
+
+		# print "current depth: " + str(len(path))
+
+		return current_node, path
+
+
+
+
+		# currentNode = self
+		# path = [self]
+		# notExpandable = not currentNode.expandable()
+		# notTerminal = True
+		# # print currentNode.expandable()
+		# while (notExpandable and notTerminal):
+		# 	choices = currentNode.getExpandedChildren()
+		# 	currentNode = choices[0]
+		# 	maxUCB = currentNode.upperConfidenceBound()
+		# 	for choice in choices:
+		# 		if (not choice.expandable()):
+		# 			thisUCB = choice.upperConfidenceBound()
+		# 			if thisUCB > maxUCB:
+		# 				currentNode = choice
+		# 				maxUCB = thisUCB
+		# 			elif thisUCB == maxUCB:
+		# 				currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
+
+		# 	path.append(currentNode)
+
+		# # print("We are " + str(len(path)) + " levels deep.")
+		# return currentNode,path
 
 
 	"""
 		Expands all children
 	"""
 	def expand(self):
+		# if self.expanded:
+		# 	raise Exception("Error: Trying to expand already expanded node")
+
 		children = []
 		for direction in [UP, DOWN, LEFT, RIGHT]:
 			newGrid,score = self.game.get_successor(direction, copy.deepcopy(self.state), self.game.get_score())
@@ -211,6 +264,8 @@ class UctTree(Tree):
 			if newGrid != None:
 				newNode = UctTree(copy.deepcopy(self.game), newGrid, lastMove=direction)
 				self.expandedChildren.append(newNode)
+
+		self.expanded = True
 
 	"""
 		Simulates a randomly played game from self
@@ -220,9 +275,8 @@ class UctTree(Tree):
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 		currentNodeState = copy.deepcopy(self.state)
 		currentNodeScore = copy.deepcopy(self.game.get_score())
-
 		successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-		
+
 		while successor != None:
 			currentNodeState = successor
 			currentNodeScore = successorScore
