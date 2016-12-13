@@ -198,8 +198,8 @@ def loop(n):
         for i in range(0,n):
             # if i%1 == 0:
             print str(i)+" out of "+str(n)
-            score, high = corner_play(4, 4)
-            # score, high = mcts_play(4,4)
+            # score, high = corner_play(4, 4)
+            score, high = mcts_play(4,4)
             # score, high = random_play(4,4)
             scores.append(score)
             highest.append(high)

@@ -9,6 +9,12 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 
+# UCTCONSTANT = random.randint(2,10000)
+# print "k = sqrt(" + str(UCTCONSTANT) + ")"
+UCTCONSTANT = 5000 / math.sqrt(2)
+print "k = "  + str(UCTCONSTANT)
+# print "robust child run"
+
 """
 	Parent class for a game tree with the information necessary for MCTS
 	at each node. Each child node is itself another Tree instance in the tree.
@@ -80,7 +86,8 @@ class Tree:
 		bestVal = 0
 		bestNode = None
 		for child in self.expandedChildren:
-			thisVal = child.getAvgValue()
+			thisVal = child.getAvgValue() # max child
+			# thisVal = child.numSimulations # most robust child
 			if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
 				bestNode = child
 				bestVal = thisVal
@@ -148,9 +155,9 @@ class UctTree(Tree):
 		Upper Confidence Bound equation
 		
 
-						 	      k * sqrt(log(n_all))
-		Value(state)		=	 ----------------------
-										n_state
+						 	     2 * k * sqrt(2 * ln(n_all))
+		Value(state)		=	 ----------------------------
+										   n_state
 		n_state is the number of simulations with moves including this node.
 		n_all is total number of simulations
 		k is a constant, to be tuned
@@ -158,11 +165,14 @@ class UctTree(Tree):
 		if n_state = 0, this is understood to evaluate to infinity
 	"""
 	def upperConfidenceBound(self):
-		k = math.sqrt(200)
+		k = UCTCONSTANT
+		n_all = constants.TOTALNUMSIMULATIONS
+		n_state = self.numSimulations
+
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
-			return self.getAvgValue() + k * math.sqrt((math.log(constants.TOTALNUMSIMULATIONS))/self.numSimulations)
+			return self.getAvgValue() + (2 * k * math.sqrt((2 * math.log(n_all))/n_state))
 
 	"""
 		UCT. Selects nodes with the highest UCB value, breaking ties randomly
