@@ -88,10 +88,10 @@ def random_play(height, width):
 
     end = False
 
-    counter = 1
+    # counter = 1
     while not end:
         # time.sleep(1)
-        print ("Move #" + str(counter))
+        # print ("Move #" + str(counter))
 
         grid = play.get_state()    
         moves = play.legal_moves(grid)
@@ -100,7 +100,7 @@ def random_play(height, width):
         else:
             action = random.choice(moves)
             play.move(action)
-        counter += 1
+        # counter += 1
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -142,14 +142,14 @@ def mcts(game):
 def mcts_play (height, width):
     play = TwentyFortyEight(height, width)
 
-    counter = 1
+    # counter = 1
 
     # Play until end of game
     while True:
         
-        print ("Move #" + str(counter))
+        # print ("Move #" + str(counter))
         # check for end of game
-        grid = play.get_state()
+        grid = copy.deepcopy(play.get_state())
         moves = play.legal_moves(grid)
         if moves == None:
             break
@@ -157,7 +157,7 @@ def mcts_play (height, width):
         # select next action using mcts and execute
         action = mcts(play)
         play.move(action)
-        counter += 1
+        # counter += 1
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -198,8 +198,8 @@ def loop(n):
         for i in range(0,n):
             # if i%1 == 0:
             print str(i)+" out of "+str(n)
-            # score, high = corner_play(4, 4)
-            score, high = mcts_play(4,4)
+            score, high = corner_play(4, 4)
+            # score, high = mcts_play(4,4)
             # score, high = random_play(4,4)
             scores.append(score)
             highest.append(high)
@@ -217,10 +217,10 @@ def main():
     # corner_play(4,4)
     # random_play(4,4)
 	# play_terminal(4, 4)
-    mcts_play(4,4)
-	# loop(10)
+    # mcts_play(4,4)
+	loop(10)
 
 if __name__=='__main__':
-        main()
+    main()
 
 

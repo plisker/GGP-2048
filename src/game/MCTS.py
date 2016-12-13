@@ -9,7 +9,6 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 
-
 """
 	Parent class for a game tree with the information necessary for MCTS
 	at each node. Each child node is itself another Tree instance in the tree.
@@ -24,7 +23,7 @@ RIGHT = 4
 class Tree:
 	def __init__(self, game, state, lastMove=None):
 		
-		self.state = game._grid # game state
+		self.state = state # game state
 
 		self.game = game
 		
@@ -87,12 +86,12 @@ class Tree:
 				bestVal = thisVal
 
 		if bestNode == None:
-			print "random move"
+			# print "random move"
 			return random.choice([UP, DOWN, LEFT, RIGHT])
 		else:
-			moves = ["up", "down","left","right"]
+			# moves = ["up", "down","left","right"]
 			bestMove = bestNode.getLastMove() 
-			print "non random move: " + str(moves[bestMove - 1])
+			# print "non random move: " + str(moves[bestMove - 1])
 			return bestMove
 
 
@@ -197,7 +196,7 @@ class UctTree(Tree):
 	def expand(self):
 		children = []
 		for direction in [UP, DOWN, LEFT, RIGHT]:
-			newGrid,score = self.game.get_successor(direction, self.state, self.game.get_score())
+			newGrid,score = self.game.get_successor(direction, copy.deepcopy(self.state), self.game.get_score())
 			
 			if newGrid != None:
 				newNode = UctTree(copy.deepcopy(self.game), newGrid, lastMove=direction)

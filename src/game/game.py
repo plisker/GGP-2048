@@ -5,6 +5,7 @@ import random
 import sys, tty, termios
 import curses
 import copy
+import constants
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -21,8 +22,11 @@ OFFSETS = {UP: (1, 0),
            LEFT: (0, 1),
            RIGHT: (0, -1)}
 
+
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-EVERY_MOVE = 0
+# do not choose 1 (current move) with mcts
+EVERY_MOVE = -1
+
 
 class TwentyFortyEight:
     """
