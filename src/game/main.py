@@ -88,8 +88,11 @@ def random_play(height, width):
 
     end = False
 
+    counter = 1
     while not end:
         # time.sleep(1)
+        print ("Move #" + str(counter))
+
         grid = play.get_state()    
         moves = play.legal_moves(grid)
         if moves == None:
@@ -97,47 +100,64 @@ def random_play(height, width):
         else:
             action = random.choice(moves)
             play.move(action)
+        counter += 1
 
     final_score = play.get_score()
     highest = play.highest_tile()
     play.end_game()
     return final_score, highest
 
-def getBestMove(game):
-    # constants.TOTALNUMSIMULATIONS = 0
-    root = MCTS.UctTree(game, game._grid)
+def mcts(game):
+
+    # create root node with start state
+    root = MCTS.UctTree(game, game.get_state())
+
+    # while within our computational budget (ITERATIONS)
     for i in range(constants.ITERATIONS):
         # print "Iteration " + str(i+1) + " of " + str(constants.ITERATIONS)
+        
+        # use tree policy to select most urgent expandable node
         simulationNode, path = root.select()
+
+        # expand that node and retrieve its children
         simulationNode.expand()
         children = simulationNode.getExpandedChildren()
+        
+        # for each of the selected node's expanded children
         for child in children:
+            
+            # simulate a game till end
             score = child.simulate()
+            
+            # back-propagate the final score into the value of all nodes in 
+            # the path to the selected node
             fullpath = path + [child]
-
-            assert path != None 
-
             child.backPropagate(score, fullpath)
+
             constants.TOTALNUMSIMULATIONS += 1
 
+    # return the direction of the child of root with the highest average value
     return root.evaluate()
 
 def mcts_play (height, width):
     play = TwentyFortyEight(height, width)
-    end = False
 
-    # counter = 0
-    while not end:
-        # print "Move #" + str(counter)
-        grid = play.get_state() 
+    counter = 1
+
+    # Play until end of game
+    while True:
+        
+        print ("Move #" + str(counter))
+        # check for end of game
+        grid = play.get_state()
         moves = play.legal_moves(grid)
         if moves == None:
-            end = True
-        else:
-            action = getBestMove(play)
-            play.move(action)
-
-        # counter += 1
+            break
+        
+        # select next action using mcts and execute
+        action = mcts(play)
+        play.move(action)
+        counter += 1
 
     final_score = play.get_score()
     highest = play.highest_tile()
@@ -187,16 +207,18 @@ def loop(n):
         print "Some error occurred!"
     
     scores = np.array(scores)
-    print "Mean of scores:", scores.mean()
-    print "Max tile of all games:", max(highest) 
-
+    if highest != []:
+        print "Mean of scores:", scores.mean()
+        print "Max tile of all games:", max(highest) 
+    else:
+        raise Exception("No games were played.")
 
 def main():
     # corner_play(4,4)
     # random_play(4,4)
 	# play_terminal(4, 4)
-    # mcts_play(4,4)
-	loop(10)
+    mcts_play(4,4)
+	# loop(10)
 
 if __name__=='__main__':
         main()

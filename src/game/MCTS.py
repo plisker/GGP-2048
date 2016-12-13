@@ -36,9 +36,6 @@ class Tree:
 
 		self.lastMove = lastMove # move that got us to this state
 
-		self.expanded = True
-
-
 	""" 
 		Expansion policy. Typically simply either one or all nodes are expanded,
 		depending on computational resources.
@@ -90,9 +87,13 @@ class Tree:
 				bestVal = thisVal
 
 		if bestNode == None:
+			print "random move"
 			return random.choice([UP, DOWN, LEFT, RIGHT])
 		else:
-			return bestNode.getLastMove() 
+			moves = ["up", "down","left","right"]
+			bestMove = bestNode.getLastMove() 
+			print "non random move: " + str(moves[bestMove - 1])
+			return bestMove
 
 
 	"""
@@ -130,7 +131,8 @@ class Tree:
 		return self.expandedChildren
 
 	def expandable(self):
-		return self.expanded
+		return self.getExpandedChildren() == []
+
 
 
 """
@@ -147,19 +149,21 @@ class UctTree(Tree):
 		Upper Confidence Bound equation
 		
 
-						 	      sqrt(2 log(n_all))
-		Value(state)		=	  	--------------
+						 	      k * sqrt(log(n_all))
+		Value(state)		=	 ----------------------
 										n_state
 		n_state is the number of simulations with moves including this node.
 		n_all is total number of simulations
+		k is a constant, to be tuned
 
 		if n_state = 0, this is understood to evaluate to infinity
 	"""
 	def upperConfidenceBound(self):
+		k = math.sqrt(200)
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
-			return self.getAvgValue() + math.sqrt((200 * math.log(constants.TOTALNUMSIMULATIONS))/self.numSimulations)
+			return self.getAvgValue() + k * math.sqrt((math.log(constants.TOTALNUMSIMULATIONS))/self.numSimulations)
 
 	"""
 		UCT. Selects nodes with the highest UCB value, breaking ties randomly
@@ -167,24 +171,24 @@ class UctTree(Tree):
 	def select(self):
 		currentNode = self
 		path = [self]
-
+		# print currentNode.expandable()
 		while (not currentNode.expandable()):
 			choices = currentNode.getExpandedChildren()
 			currentNode = choices[0]
 			maxUCB = currentNode.upperConfidenceBound()
 			for choice in choices:
-				thisUCB = choice.upperConfidenceBound()
-				if thisUCB > maxUCB:
-					currentNode = choice
-					maxUCB = thisUCB
-				elif thisUCB == maxUCB:
-					currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
+				if (not choice.expandable()):
+					thisUCB = choice.upperConfidenceBound()
+					if thisUCB > maxUCB:
+						currentNode = choice
+						maxUCB = thisUCB
+					elif thisUCB == maxUCB:
+						currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
+
 			path.append(currentNode)
 
 		# print("We are " + str(len(path)) + " levels deep.")
 		return currentNode,path
-
-
 
 
 	"""
@@ -193,15 +197,11 @@ class UctTree(Tree):
 	def expand(self):
 		children = []
 		for direction in [UP, DOWN, LEFT, RIGHT]:
-			stateCopy = copy.deepcopy(self.state)
-			scoreCopy = copy.deepcopy(self.game.get_score())
-			newGrid,score = self.game.get_successor(direction, stateCopy, scoreCopy)
+			newGrid,score = self.game.get_successor(direction, self.state, self.game.get_score())
 			
 			if newGrid != None:
-				newNode = UctTree(self.game, newGrid, lastMove=direction)
+				newNode = UctTree(copy.deepcopy(self.game), newGrid, lastMove=direction)
 				self.expandedChildren.append(newNode)
-
-		self.expanded = False
 
 	"""
 		Simulates a randomly played game from self
