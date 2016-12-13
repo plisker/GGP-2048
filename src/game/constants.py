@@ -5,6 +5,6 @@
 """
 
 # Number of iterations of MCTS
-ITERATIONS = 5000
+ITERATIONS = 100
 
 TOTALNUMSIMULATIONS = 0
