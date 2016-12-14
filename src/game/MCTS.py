@@ -238,8 +238,9 @@ class UctTree(Tree):
 		self.expanded = True
 
 	def simulate(self):
-		return self.simulate_score()
-		# self.simulate_highest_tile()
+		# return self.simulate_score()
+		# return self.simulate_highest_tile()
+		return self.simulate_heuristic_score()
 
 	"""
 		Simulates a randomly played game from self & returns the final score
@@ -296,6 +297,48 @@ class UctTree(Tree):
 			successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
 			
 		return currentNodeScore
+
+	"""
+		Simulates a game played using heuristics & returns final score 
+	"""
+	def simulate_heuristic_score(self):
+		best_score = -1
+		best_action = None
+		for action in [UP, DOWN, LEFT, RIGHT]:
+			currentNodeState = copy.deepcopy(self.state)
+			currentNodeScore = copy.deepcopy(self.game.get_score())
+			_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
+			if score > best_score:
+				best_score = score
+				best_action = action
+			
+		if best_action == None:
+			best_action = random.choice([UP,DOWN,LEFT,RIGHT])
+
+		successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
+		
+		while successor != None:
+			currentNodeState = successor
+			currentNodeScore = successorScore
+			
+			best_score = -1
+			best_action = None
+			for action in [UP, DOWN, LEFT, RIGHT]:
+				currentNodeState = copy.deepcopy(self.state)
+				currentNodeScore = copy.deepcopy(self.game.get_score())
+				_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
+				if score > best_score:
+					best_score = score
+					best_action = action
+
+			if best_action == None:
+				best_action = random.choice([UP,DOWN,LEFT,RIGHT])
+
+			successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
+			
+			
+		return currentNodeScore		
+
 
 
 	def highest_tile(self,grid):
