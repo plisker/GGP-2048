@@ -80,7 +80,6 @@ def get(play):
 def play_terminal(height, width, scoring):
     play = TwentyFortyEight(height, width, scoring)
 
-    legal_moves = True
     while True:
         key = get(play)
         if key == 5:
