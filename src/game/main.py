@@ -118,8 +118,6 @@ def mcts_simple(game):
         
         simulationNode.backPropagate(score, path)
 
-        constants.TOTALNUMSIMULATIONS += 1
-
     # return the direction of the child of root with the highest average value
     return root.evaluate()
 
@@ -165,7 +163,7 @@ def mcts(game):
             # simulate a game till end
             score = child.simulate()
 
-            debug_print("estimated score from " + str(i+1) "th child:"+ str(score))
+            debug_print("estimated score from " + str(i+1) + "th child:"+ str(score))
             
             # back-propagate the final score into the value of all nodes in 
             # the path to the selected node
@@ -173,8 +171,6 @@ def mcts(game):
 
             debug_print("propagating score through path: " + str(fullpath))
             child.backPropagate(score, fullpath)
-
-            constants.TOTALNUMSIMULATIONS += 1
 
     # return the direction of the child of root with the highest average value
     return root.evaluate()

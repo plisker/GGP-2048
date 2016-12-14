@@ -164,25 +164,25 @@ class UctTree(Tree):
 		Upper Confidence Bound equation
 		
 
-						 	     2 * k * sqrt(2 * ln(n_all))
-		Value(state)		=	 ----------------------------
-										   n_state
-		n_state is the number of simulations with moves including this node.
-		n_all is total number of simulations
-		
+					   _ 	     2 * k * sqrt(2 * ln(n_p))
+		UCB(s)  	=  V(s)	+  ----------------------------
+										   n_s
+		_
+		V(s) = average value of the child node in simulation
+		n_p is the number of simulations done from the parent node
+		n_s is the number of simulations done from the child node
 		k is a constant, to be tuned
 
-		if n_state = 0, Value(state) is understood to evaluate to infinity
+		Note: if n_s= 0, Value(state) is understood to evaluate to infinity
 	"""
-	def upperConfidenceBound(self):
+	def upperConfidenceBound(self,n_p):
 		k = UCTCONSTANT
-		n_all = constants.TOTALNUMSIMULATIONS
-		n_state = self.numSimulations
+		n_s = self.numSimulations
 
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
-			return self.getAvgValue() + (2 * k * math.sqrt((2 * math.log(n_all))/n_state))
+			return self.getAvgValue() + (2 * k * math.sqrt((2 * math.log(n_p))/n_s))
 
 	"""
 		UCT. Selects nodes with the highest UCB value, breaking ties randomly
@@ -206,7 +206,7 @@ class UctTree(Tree):
 
 			# choose to descend unto the child with highest UCB, break ties by chance
 			for child in children:
-				thisUCB = child.upperConfidenceBound()
+				thisUCB = child.upperConfidenceBound(current_node.getNumSimulations())
 				if thisUCB > maxUCB:
 					current_node = child
 					maxUCB = thisUCB
@@ -222,32 +222,6 @@ class UctTree(Tree):
 		# print "current depth: " + str(len(path))
 
 		return current_node, path
-
-
-
-
-		# currentNode = self
-		# path = [self]
-		# notExpandable = not currentNode.expandable()
-		# notTerminal = True
-		# # print currentNode.expandable()
-		# while (notExpandable and notTerminal):
-		# 	choices = currentNode.getExpandedChildren()
-		# 	currentNode = choices[0]
-		# 	maxUCB = currentNode.upperConfidenceBound()
-		# 	for choice in choices:
-		# 		if (not choice.expandable()):
-		# 			thisUCB = choice.upperConfidenceBound()
-		# 			if thisUCB > maxUCB:
-		# 				currentNode = choice
-		# 				maxUCB = thisUCB
-		# 			elif thisUCB == maxUCB:
-		# 				currentNode,maxUCB = random.choice([(currentNode,maxUCB),(choice,thisUCB)])
-
-		# 	path.append(currentNode)
-
-		# # print("We are " + str(len(path)) + " levels deep.")
-		# return currentNode,path
 
 
 	"""
@@ -268,22 +242,95 @@ class UctTree(Tree):
 		self.expanded = True
 
 	"""
-		Simulates a randomly played game from self
+		Simulates a randomly played game from self & returns the final score
 	"""
 	def simulate(self):
 		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+
 		currentNodeState = copy.deepcopy(self.state)
+
 		currentNodeScore = copy.deepcopy(self.game.get_score())
+		# currentNodeScore = self.highest_tile(currentNodeState)
+
 		successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		# successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		# successorScore = self.highest_tile(successor)
 
 		while successor != None:
+			# successorScore = self.highest_tile(successor)
 			currentNodeState = successor
 			currentNodeScore = successorScore
+			
 			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+
 			successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			# successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
 			
 		return currentNodeScore
+
+	"""
+		Simulates a randomly played game from self & returns the HIGHEST TILE #
+	"""
+	# def simulate(self):
+		
+	# 	randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+
+	# 	currentNodeState = copy.deepcopy(self.state)
+
+	# 	# currentNodeScore = copy.deepcopy(self.game.get_score())
+	# 	currentNodeScore = self.highest_tile(currentNodeState)
+
+	# 	# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+	# 	successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+	# 	successorScore = self.highest_tile(successor)
+
+	# 	while successor != None:
+	# 		successorScore = self.highest_tile(successor)
+	# 		currentNodeState = successor
+	# 		currentNodeScore = successorScore
+			
+	# 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+
+	# 		# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
+	# 		successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			
+	# 	return currentNodeScore
+
+
+	# def highest_tile(self,grid):
+	#     if grid == None:
+	#     	return 0
+	#     else:
+	# 	    highest = -1
+	# 	    for row in grid:
+	# 	        for element in row:
+	# 	            if element > highest:
+	# 	                highest = element
+	# 	    return highest
+
+	# """
+	# 	Secure-child evaluation
+	# 	Returns the move that leads to the child state with the highest UCB
+	# """
+	# def evaluate(self):
+	# 	bestVal = -1
+	# 	bestNode = None
+	# 	for child in self.expandedChildren:
+	# 		thisVal = child.upperConfidenceBound(self.getNumSimulations()) # secure child
+	# 		# thisVal = child.numSimulations # most robust child
+	# 		if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
+	# 			bestNode = child
+	# 			bestVal = thisVal
+
+	# 	if bestNode == None:
+	# 		# print "random move"
+	# 		return random.choice([UP, DOWN, LEFT, RIGHT])
+	# 	else:
+	# 		# moves = ["up", "down","left","right"]
+	# 		bestMove = bestNode.getLastMove() 
+	# 		# print "non random move: " + str(moves[bestMove - 1])
+	# 		return bestMove
 
 
 
