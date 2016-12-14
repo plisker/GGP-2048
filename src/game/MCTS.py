@@ -1,7 +1,6 @@
 import copy
 import math
 import random
-import constants
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -9,11 +8,8 @@ DOWN = 2
 LEFT = 3
 RIGHT = 4
 
-# UCTCONSTANT = random.randint(2,10000)
-# print "k = sqrt(" + str(UCTCONSTANT) + ")"
-UCTCONSTANT = 5000 / math.sqrt(2)
-# print "k = "  + str(UCTCONSTANT)
-# print "robust child run"
+
+UCTCONSTANT = 8000 / math.sqrt(2)
 
 """
 	Parent class for a game tree with the information necessary for MCTS
@@ -241,10 +237,14 @@ class UctTree(Tree):
 
 		self.expanded = True
 
+	def simulate(self):
+		return self.simulate_score()
+		# self.simulate_highest_tile()
+
 	"""
 		Simulates a randomly played game from self & returns the final score
 	"""
-	def simulate(self):
+	def simulate_score(self):
 		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 
@@ -272,66 +272,68 @@ class UctTree(Tree):
 	"""
 		Simulates a randomly played game from self & returns the HIGHEST TILE #
 	"""
-	# def simulate(self):
+	def simulate_highest_tile(self):
 		
-	# 	randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 
-	# 	currentNodeState = copy.deepcopy(self.state)
+		currentNodeState = copy.deepcopy(self.state)
 
-	# 	# currentNodeScore = copy.deepcopy(self.game.get_score())
-	# 	currentNodeScore = self.highest_tile(currentNodeState)
+		# currentNodeScore = copy.deepcopy(self.game.get_score())
+		currentNodeScore = self.highest_tile(currentNodeState)
 
-	# 	# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-	# 	successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-	# 	successorScore = self.highest_tile(successor)
+		# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		successorScore = self.highest_tile(successor)
 
-	# 	while successor != None:
-	# 		successorScore = self.highest_tile(successor)
-	# 		currentNodeState = successor
-	# 		currentNodeScore = successorScore
+		while successor != None:
+			successorScore = self.highest_tile(successor)
+			currentNodeState = successor
+			currentNodeScore = successorScore
 			
-	# 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
+			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
 
-	# 		# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
-	# 		successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
 			
-	# 	return currentNodeScore
+		return currentNodeScore
 
 
-	# def highest_tile(self,grid):
-	#     if grid == None:
-	#     	return 0
-	#     else:
-	# 	    highest = -1
-	# 	    for row in grid:
-	# 	        for element in row:
-	# 	            if element > highest:
-	# 	                highest = element
-	# 	    return highest
+	def highest_tile(self,grid):
+	    if grid == None:
+	    	return 0
+	    else:
+		    highest = -1
+		    for row in grid:
+		        for element in row:
+		            if element > highest:
+		                highest = element
+		    return highest
 
-	# """
-	# 	Secure-child evaluation
-	# 	Returns the move that leads to the child state with the highest UCB
-	# """
+	"""
+		Secure-child evaluation
+		Returns the move that leads to the child state with the highest UCB
+	"""
+	def evaluate_secure(self):
+		bestVal = -1
+		bestNode = None
+		for child in self.expandedChildren:
+			thisVal = child.upperConfidenceBound(self.getNumSimulations()) # secure child
+			# thisVal = child.numSimulations # most robust child
+			if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
+				bestNode = child
+				bestVal = thisVal
+
+		if bestNode == None:
+			# print "random move"
+			return random.choice([UP, DOWN, LEFT, RIGHT])
+		else:
+			# moves = ["up", "down","left","right"]
+			bestMove = bestNode.getLastMove() 
+			# print "non random move: " + str(moves[bestMove - 1])
+			return bestMove
+
 	# def evaluate(self):
-	# 	bestVal = -1
-	# 	bestNode = None
-	# 	for child in self.expandedChildren:
-	# 		thisVal = child.upperConfidenceBound(self.getNumSimulations()) # secure child
-	# 		# thisVal = child.numSimulations # most robust child
-	# 		if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
-	# 			bestNode = child
-	# 			bestVal = thisVal
-
-	# 	if bestNode == None:
-	# 		# print "random move"
-	# 		return random.choice([UP, DOWN, LEFT, RIGHT])
-	# 	else:
-	# 		# moves = ["up", "down","left","right"]
-	# 		bestMove = bestNode.getLastMove() 
-	# 		# print "non random move: " + str(moves[bestMove - 1])
-	# 		return bestMove
-
+	# 	self.evaluate_secure()
 
 
 

@@ -5,7 +5,6 @@ import random
 import sys, tty, termios
 import curses
 import copy
-import constants
 
 # Directions, DO NOT MODIFY
 UP = 1
