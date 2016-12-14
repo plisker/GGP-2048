@@ -5,6 +5,7 @@ import random
 import sys, tty, termios
 import curses
 import copy
+import math
 
 # Directions, DO NOT MODIFY
 UP = 1
@@ -22,25 +23,32 @@ OFFSETS = {UP: (1, 0),
            RIGHT: (0, -1)}
 
 
+# Choose Terminal Output
 # 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-# do not choose 1 (current move) with mcts
-EVERY_MOVE = 0
+# Do not choose 1 (current move) with mcts
+EVERY_MOVE = -1
 
+# Scoring scheme
+# 0 -> Traditional 2048 scoring, merges result in score of new tile added
+# 1 -> Score updated to the total sum of the tiles
+# 2 -> Score updated to the total sum of the log_2 value of the tiles
+# Create more in self.update_score function!
 
 class TwentyFortyEight:
     """
     Class to run the game logic.
     """
-    def __init__(self, grid_height, grid_width):
+    def __init__(self, grid_height, grid_width, scoring=0):
         self._height = grid_height
         self._width = grid_width
         self._grid = []
+        self._scoring = scoring
         self.reset()
         self._borders = {UP: [(0, col) for col in range(self._width)],
                    DOWN: [(self._height-1, col) for col in range(self._width)],
                    LEFT: [(row, 0)for row in range(self._height)],
                    RIGHT: [(row, self._width-1) for row in range(self._height)]}
-        self.score = 0
+        self._score = 0
 
         if EVERY_MOVE == 1:
             self.prepare_terminal_output()
@@ -168,7 +176,8 @@ class TwentyFortyEight:
         for index in self._borders[direction]:
             cutted = self.cut(index, OFFSETS[direction], steps)
             merged, sum_score = self.merge(cutted)
-            self.score += sum_score
+            score = self.update_score(self._score, sum_score)
+            self._score = score
             if cutted != merged:
                 changed = True
             self.modify(index, OFFSETS[direction], steps, merged)
@@ -188,7 +197,7 @@ class TwentyFortyEight:
         for index in self._borders[direction]:
             cutted = self.simulate_cut(index, OFFSETS[direction], steps, grid)
             merged, sum_score = self.merge(cutted)
-            score += sum_score
+            score = self.update_score(score, sum_score)
             if cutted != merged:
                 changed = True
             self.simulate_modify(index, OFFSETS[direction], steps, merged, grid)
@@ -213,11 +222,58 @@ class TwentyFortyEight:
         return self._grid
 
     def get_score(self):
-        return self.score
+        return self._score
+
+    # Useful in case we change how tiles are stored in memory, whether as true value or log_2(tile)
+    # TODO: whenever tile value is accessed, use this function
+    def get_tile_value(self, tile):
+    	return tile
+
+    def update_score(self, starting_score, added_score):
+    	new_score = starting_score
+    	if self._scoring == 0:
+    		new_score += added_score
+    	if self._scoring == 1:
+    		new_score = 0
+    		for row in self._grid:
+    			for tile in row:
+    				new_score += self.get_tile_value(tile)    	
+    	if self._scoring == 2:
+    		new_score = 0
+    		for row in self._grid:
+    			for tile in row:
+    				tile_value = self.get_tile_value(tile)
+    				if tile_value > 0:
+    					new_score += int(math.log(tile_value, 2))
+    	return new_score
+
+    def direction_quick(self, grid, direction):
+    	steps = self._height
+        changed = False
+        if direction == RIGHT or direction == LEFT:
+            steps = self._width
+        for index in self._borders[direction]:
+            cutted = self.cut(index, OFFSETS[direction], steps)
+            merged, _ = self.merge(cutted)
+            if cutted != merged:
+                changed = True
+
+
+        legal = False
+        # Rows
+        for i in range(self._height):
+        	# Columns
+        	for j in range(self._width):
+        		try:
+        			if grid[i][j] != 0:
+
+
+    	return legal
 
     # Can probably make more efficient by first checking for empty tiles...
     def legal_moves(self, grid):
         legal = []
+
         for i in xrange(4):
             test_grid = copy.deepcopy(grid)
             # self.alert("\nTesting move "+str(i+1)+"!")
@@ -287,7 +343,7 @@ class TwentyFortyEight:
         self.stdscr.refresh()
 
     def simple_print(self):
-        print "\nScore: "+str(self.score)
+        print "\nScore: "+str(self.update_score(self._score, 0))
         table = self.pretty_grid_print()
         print '\n'.join(table)
 
