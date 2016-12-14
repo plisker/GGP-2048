@@ -77,8 +77,8 @@ def get(play):
         play.stdscr.refresh()
         return -1
 
-def play_terminal(height, width):
-    play = TwentyFortyEight(height, width)
+def play_terminal(height, width, scoring):
+    play = TwentyFortyEight(height, width, scoring)
 
     while True:
         key = get(play)
@@ -94,8 +94,8 @@ def debug_print(string, force=False):
     if DEBUG == 1 or force:
         print string
 
-def random_play(height, width):
-    play = TwentyFortyEight(height, width)
+def random_play(height, width, scoring):
+    play = TwentyFortyEight(height, width, scoring)
 
     end = False
 
@@ -201,11 +201,11 @@ def mcts(game):
 """
     Repeatedly calls UCT implementation to determine each move
 """
-def mcts_play (height, width):
+def mcts_play(height, width, scoring):
     # debug_print("playing with " + str(ITERATIONS) + " iterations", force=True)
     
     # Start a new game
-    play = TwentyFortyEight(height, width)
+    play = TwentyFortyEight(height, width, scoring)
 
     counter = 1 
     
@@ -238,8 +238,8 @@ def mcts_play (height, width):
     play.end_game()
     return final_score, highest
 
-def corner_play(height, width):
-    play = TwentyFortyEight(height, width)
+def corner_play(height, width, scoring):
+    play = TwentyFortyEight(height, width, scoring)
 
     end = False
 
@@ -265,16 +265,16 @@ def corner_play(height, width):
     play.end_game()
     return final_score, highest
 
-def loop(height,width,n):
+def loop(height, width, scoring, n):
     scores = []
     highest = []
     try:
         for i in range(0,n):
-            # if i%1 == 0:
-            print "Test " + str(i+1)+ " out of " + str(n)
-            # score, high = corner_play(4, 4)
-            score, high = mcts_play(height,width)
-            # score, high = random_play(4,4)
+            if i%10 == 0:
+	            print "Test " + str(i+1)+ " out of " + str(n)
+            # score, high = corner_play(height, width, scoring)
+            score, high = mcts_play(height, width, scoring)
+            # score, high = random_play(height, width, scoring)
             scores.append(score)
             highest.append(high)
     except:
@@ -290,27 +290,30 @@ def loop(height,width,n):
 """
     Tests several * square * grid sizes n_each times each
 """
-def size_test(size_min,size_max,n_each):
+def size_test(size_min, size_max, scoring, n_each):
     for i in range(size_min,size_max):
         print "----------------------------------------------"
         print "Testing " + str(i) + " x " + str(i) + " grids:"
-        loop(i,i,n_each)
+        loop(i, i, scoring, n_each)
 
 def main(strategy="mcts"):
     if strategy == "corner":
-        corner_play(4,4)
+        corner_play(4, 4, 0)
     elif strategy == "random":
-        random_play(4,4)
+        random_play(4, 4, 2)
     elif strategy == "terminal":
-	   play_terminal(4, 4)
-    elif strategy == "simple":
-        mcts_simple(4,4)
+	   play_terminal(4, 4, 0)
+
+	# Does this even work?
+    # elif strategy == "simple":
+    #     mcts_simple(4,4,0)
+    
     elif strategy == "loop":
-	   loop(4,4,30)
+	   # loop(2, 2, 2, 100)
     elif strategy == "size":
-        size_test(5,8,10)
+        size_test(5, 8, 0, 10)
     else:
-        mcts_play(4,4)
+        mcts_play(2, 2, 0)
 
 if __name__=='__main__':
     if len(sys.argv) == 2:
