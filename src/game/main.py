@@ -80,6 +80,7 @@ def get(play):
 def play_terminal(height, width, scoring):
     play = TwentyFortyEight(height, width, scoring)
 
+    legal_moves = True
     while True:
         key = get(play)
         if key == 5:
@@ -309,7 +310,7 @@ def main(strategy="mcts"):
     #     mcts_simple(4,4,0)
     
     elif strategy == "loop":
-	   # loop(2, 2, 2, 100)
+	   loop(2, 2, 2, 100)
     elif strategy == "size":
         size_test(5, 8, 0, 10)
     else:
