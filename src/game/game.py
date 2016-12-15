@@ -6,14 +6,7 @@ import sys, tty, termios
 import curses
 import copy
 import math
-
-# Directions, DO NOT MODIFY
-UP = 1
-DOWN = 2
-LEFT = 3
-RIGHT = 4
-QUIT = 5
-
+from constants import *
 
 # Offsets for computing tile indices in each direction.
 # DO NOT MODIFY this dictionary.
@@ -22,11 +15,6 @@ OFFSETS = {UP: (1, 0),
            LEFT: (0, 1),
            RIGHT: (0, -1)}
 
-
-# Choose Terminal Output
-# 0 for move trail; 1 for only current move; 2 for only final; -1 for nothing
-# Do not choose 1 (current move) with mcts
-EVERY_MOVE = -1
 
 # Scoring scheme
 # 0 -> Traditional 2048 scoring, merges result in score of new tile added
@@ -247,28 +235,29 @@ class TwentyFortyEight:
     					new_score += int(math.log(tile_value, 2))
     	return new_score
 
-    def direction_quick(self, grid, direction):
-    	steps = self._height
-        changed = False
-        if direction == RIGHT or direction == LEFT:
-            steps = self._width
-        for index in self._borders[direction]:
-            cutted = self.cut(index, OFFSETS[direction], steps)
-            merged, _ = self.merge(cutted)
-            if cutted != merged:
-                changed = True
+    # def direction_quick(self, grid, direction):
+    # 	steps = self._height
+    #     changed = False
+    #     if direction == RIGHT or direction == LEFT:
+    #         steps = self._width
+    #     for index in self._borders[direction]:
+    #         cutted = self.cut(index, OFFSETS[direction], steps)
+    #         merged, _ = self.merge(cutted)
+    #         if cutted != merged:
+    #             changed = True
 
 
-        legal = False
-        # Rows
-        for i in range(self._height):
-        	# Columns
-        	for j in range(self._width):
-        		try:
-        			if grid[i][j] != 0:
+    #     legal = False
+    #     # Rows
+    #     for i in range(self._height):
+    #     	# Columns
+    #     	for j in range(self._width):
+    #     		try:
+    #     			if grid[i][j] != 0:
+    #                     return 0
 
 
-    	return legal
+    # 	return legal
 
     # Can probably make more efficient by first checking for empty tiles...
     def legal_moves(self, grid):
@@ -388,10 +377,6 @@ class TwentyFortyEight:
                 if element > highest:
                     highest = element
         return highest
-
-
-def main():
-    print "Run the game from main.py"
 
 if __name__=='__main__':
         main()

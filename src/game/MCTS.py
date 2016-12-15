@@ -1,15 +1,13 @@
 import copy
 import math
 import random
+import game
+from constants import *
 
-# Directions, DO NOT MODIFY
-UP = 1
-DOWN = 2
-LEFT = 3
-RIGHT = 4
-
-
-UCTCONSTANT = 8000 / math.sqrt(2)
+"""
+	used by all 2048 trees to call get_successors
+"""
+game = game.TwentyFortyEight(4,4)
 
 """
 	Parent class for a game tree with the information necessary for MCTS
@@ -23,12 +21,12 @@ UCTCONSTANT = 8000 / math.sqrt(2)
 	input: a game-state `state` i.e. a 2048 board object
 """
 class Tree:
-	def __init__(self, game, state, lastMove=None):
+	def __init__(self, state, lastMove=None, score=0):
 		
 		self.state = state # game state
-
-		self.game = game
 		
+		self.score = 0 # score within game state
+
 		self.value = 0 # sum of values of all the simulations played through this node
 		
 		self.numSimulations = 0 # number of simulations played through this node
@@ -38,6 +36,16 @@ class Tree:
 		self.lastMove = lastMove # move that got us to this state
 
 		self.expanded = False
+
+		actions_left = []
+		for direction in [UP,DOWN,LEFT,RIGHT]:
+			successor,_ = game.get_successor(direction, copy.deepcopy(self.state), 0)
+			if successor != None:
+				actions_left.append(direction)
+		
+		self.actions_left = actions_left
+
+		# self.maxValue = 0 # attempted to use maximum simulation result as indicator of state value... didn't work well
 
 	""" 
 		Expansion policy. Typically simply either one or all nodes are expanded,
@@ -84,7 +92,7 @@ class Tree:
 		bestVal = -1
 		bestNode = None
 		for child in self.expandedChildren:
-			thisVal = child.getAvgValue() # max child
+			thisVal = child.getValue() # max child
 			# thisVal = child.numSimulations # most robust child
 			if (thisVal > bestVal) or (thisVal == bestVal and random.random() >= 0.5):
 				bestNode = child
@@ -108,6 +116,8 @@ class Tree:
 
 	def addValue(self,value):
 		self.value += value
+		# if value > self.maxValue:
+		# 	self.maxValue = value
 
 	def getNumSimulations(self):
 		return self.numSimulations
@@ -115,6 +125,12 @@ class Tree:
 	"""
 		Output: average value of the node per simulation. 
 		Called by select() and evaluate()
+	"""
+	def getValue(self):
+		return self.getAvgValue()
+
+	"""
+		Default node value: average simulation value
 	"""
 	def getAvgValue(self):
 		if self.numSimulations == 0:
@@ -135,14 +151,7 @@ class Tree:
 		return self.expandedChildren
 
 	def expandable(self):
-		successors = []
-		for direction in [UP,DOWN,LEFT,RIGHT]:
-			successor,_ = self.game.get_successor(direction, copy.deepcopy(self.state), self.game.get_score())
-			if successor != None:
-				successors.append(successor)
-		is_terminal = (successors == [])
-
-		return (self.expanded and is_terminal)
+		return (not (self.actions_left == []))
 
 
 
@@ -153,8 +162,102 @@ class Tree:
 """
 class UctTree(Tree):
 	
-	def __init__(self,game,state,lastMove=None):
-		Tree.__init__(self,game,state,lastMove)
+	def __init__(self,state,lastMove=None,score=0):
+		Tree.__init__(self,state,lastMove,score)
+		self.heuristic_value = self.heuristic()
+		
+	"""""""""""""""
+
+	Public methods
+
+	"""""""""""""""
+	
+	def select(self):
+		return self.uct()
+
+	
+	def expand(self):
+		# self.expand_one_random()
+		self.expand_all()
+
+	def simulate(self):
+		return self.simulate_score()
+		# return self.simulate_highest_tile()
+		# return self.simulate_heuristic_score()
+
+	
+	"""""""""""""""
+
+	Private methods
+
+	"""""""""""""""
+
+	"""
+		UCT. Selects nodes with the highest UCB value, breaking ties randomly
+	"""
+	def uct(self):
+		# initialized search at root (this method is meant for the root node), thus self is the root
+		current_node = self
+		path = [current_node]
+	
+		# We want to select the first node we in encounter that we can expand
+		while (not current_node.expandable()):
+		
+			# Get children of current_node so we can choose among them
+			children = current_node.getExpandedChildren()
+		
+			# choose to descend unto the child with highest UCB, break ties by chance	
+			maxUCB = -1
+			for child in children:
+				thisUCB = child.upperConfidenceBound(current_node.getNumSimulations())
+				if thisUCB > maxUCB:
+					current_node = child
+					children = grandchildren
+					maxUCB = thisUCB
+
+			# append each chosen node to path
+			path = path + [current_node]
+
+		return current_node, path
+
+	def expand_one_random(self):
+		# choose a random available action 
+		random_action = random.choice(self.actions_left)
+		
+		# generate successor grid from random action
+		newGrid,newScore = game.get_successor(random_action, copy.deepcopy(self.state), self.score)
+		
+		if newGrid == None:
+			raise Exception("hmm")
+		else:
+			newNode = UctTree(newGrid, lastMove=random_action, score=newScore)
+			self.expandedChildren.append(newNode)
+
+	# def expand_one_heuristic(self):
+	# 	# choose a random available action 
+	# 	random_action = random.choice(self.actions_left)
+		
+	# 	newGrid,newScore = game.get_successor(random_action, copy.deepcopy(self.state), self.score)
+		
+	# 	if newGrid == None:
+	# 		raise Exception("hmm")
+	# 	else:
+	# 		newNode = UctTree(newGrid, lastMove=random_action, score=newScore)
+	# 		self.expandedChildren.append(newNode)
+
+	"""
+		Expands all children
+	"""
+	def expand_all(self):
+		children = []
+		for direction in [UP, DOWN, LEFT, RIGHT]:
+			newGrid,score = game.get_successor(direction, copy.deepcopy(self.state), self.score)
+			if newGrid != None:
+				newNode = UctTree(newGrid, lastMove=direction, score=score)
+				self.expandedChildren.append(newNode)
+
+		self.expanded = True
+
 
 	"""
 		Upper Confidence Bound equation
@@ -174,171 +277,91 @@ class UctTree(Tree):
 	def upperConfidenceBound(self,n_p):
 		k = UCTCONSTANT
 		n_s = self.numSimulations
+		h = self.heuristic_value
 
 		if self.numSimulations == 0:
 			return float("inf")
 		else:
-			return self.getAvgValue() + (2 * k * math.sqrt((2 * math.log(n_p))/n_s))
-
-	"""
-		UCT. Selects nodes with the highest UCB value, breaking ties randomly
-	"""
-	def select(self):
-		# initialized search at root (this method is meant for the root node), thus self is the root
-		current_node = self
-		path = [current_node]
-		
-		# Get children of current_node so we can choose among them
-		children = current_node.getExpandedChildren()
-		
-		# We want to select the first we in encounter in our search non-terminal node that we can expand
-		while (children != []):
-			# print "are children:" + str(children)
-			# Get children of current_node so we can choose among them
-			children = current_node.getExpandedChildren()
-			# assert (children != []) # definitely gonna be triggered
-
-			maxUCB = -1
-
-			# choose to descend unto the child with highest UCB, break ties by chance
-			for child in children:
-				thisUCB = child.upperConfidenceBound(current_node.getNumSimulations())
-				if thisUCB > maxUCB:
-					current_node = child
-					maxUCB = thisUCB
-				elif thisUCB == maxUCB:
-					current_node,maxUCB = random.choice([(current_node,maxUCB),(child,thisUCB)])
-
-			# append each chosen node to path
-			path = path + [current_node]
-
-			# update children
-			children = current_node.getExpandedChildren()
-
-		# print "current depth: " + str(len(path))
-
-		return current_node, path
-
-
-	"""
-		Expands all children
-	"""
-	def expand(self):
-		# if self.expanded:
-		# 	raise Exception("Error: Trying to expand already expanded node")
-
-		children = []
-		for direction in [UP, DOWN, LEFT, RIGHT]:
-			newGrid,score = self.game.get_successor(direction, copy.deepcopy(self.state), self.game.get_score())
-			
-			if newGrid != None:
-				newNode = UctTree(copy.deepcopy(self.game), newGrid, lastMove=direction)
-				self.expandedChildren.append(newNode)
-
-		self.expanded = True
-
-	def simulate(self):
-		# return self.simulate_score()
-		# return self.simulate_highest_tile()
-		return self.simulate_heuristic_score()
+			return self.getValue() + (2 * k * math.sqrt((2 * math.log(n_p))/n_s)) + (h / (n_s + 1))
 
 	"""
 		Simulates a randomly played game from self & returns the final score
 	"""
 	def simulate_score(self):
-		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-
 		currentNodeState = copy.deepcopy(self.state)
-
-		currentNodeScore = copy.deepcopy(self.game.get_score())
-		# currentNodeScore = self.highest_tile(currentNodeState)
-
-		successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-		# successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-		# successorScore = self.highest_tile(successor)
-
-		while successor != None:
-			# successorScore = self.highest_tile(successor)
+		currentNodeScore = copy.deepcopy(self.score)
+		successor,successorScore = game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		while (successor != None):
 			currentNodeState = successor
 			currentNodeScore = successorScore
-			
 			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-
-			successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
-			# successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			successor,successorScore = game.get_successor(randomMove, currentNodeState, successorScore)
 			
 		return currentNodeScore
 
 	"""
-		Simulates a randomly played game from self & returns the HIGHEST TILE #
+		Simulates a randomly played game from self & returns the highest tile
 	"""
 	def simulate_highest_tile(self):
 		
 		randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-
 		currentNodeState = copy.deepcopy(self.state)
-
-		# currentNodeScore = copy.deepcopy(self.game.get_score())
 		currentNodeScore = self.highest_tile(currentNodeState)
-
-		# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
-		successor,_ = self.game.get_successor(randomMove, currentNodeState, currentNodeScore)
+		successor,_ = game.get_successor(randomMove, currentNodeState, currentNodeScore)
 		successorScore = self.highest_tile(successor)
 
 		while successor != None:
 			successorScore = self.highest_tile(successor)
 			currentNodeState = successor
 			currentNodeScore = successorScore
-			
 			randomMove = random.choice([UP, DOWN, LEFT, RIGHT])
-
-			# successor,successorScore = self.game.get_successor(randomMove, currentNodeState, successorScore)
-			successor, _ = self.game.get_successor(randomMove, currentNodeState, successorScore)
+			successor, _ = game.get_successor(randomMove, currentNodeState, successorScore)
 			
 		return currentNodeScore
 
 	"""
-		Simulates a game played using heuristics & returns final score 
+		TODO: Simulates a game played using heuristics & returns final score 
 	"""
-	def simulate_heuristic_score(self):
-		best_score = -1
-		best_action = None
-		for action in [UP, DOWN, LEFT, RIGHT]:
-			currentNodeState = copy.deepcopy(self.state)
-			currentNodeScore = copy.deepcopy(self.game.get_score())
-			_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
-			if score > best_score:
-				best_score = score
-				best_action = action
-			
-		if best_action == None:
-			best_action = random.choice([UP,DOWN,LEFT,RIGHT])
+	# def simulate_heuristic_score(self):
+		# best_heuristic = -1
+		# best_action = None
+		# currentNodeState = copy.deepcopy(self.state)
+		# currentNodeScore = copy.deepcopy(self.score)
 
-		successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
+		# for action in [UP, DOWN, LEFT, RIGHT]:
+		# 	current_state = copy.deepcopy(self.state)
+		# 	next_state, next_score = self.game.get_successor(action, currentNodeState, currentNodeScore)
+		# 	heuristic_value = self.heuristic(next_state)
+		# 	if heuristic_value > best_heuristic:
+		# 		best_heuristic = heuristic_value
+		# 		best_action = action
+		# if best_action == None:
+		# 	best_action = random.choice([UP,DOWN,LEFT,RIGHT])
+
+		# successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
 		
-		while successor != None:
-			currentNodeState = successor
-			currentNodeScore = successorScore
+		# while successor != None:
+		# 	currentNodeState = successor
+		# 	currentNodeScore = successorScore
 			
-			best_score = -1
-			best_action = None
-			for action in [UP, DOWN, LEFT, RIGHT]:
-				currentNodeState = copy.deepcopy(self.state)
-				currentNodeScore = copy.deepcopy(self.game.get_score())
-				_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
-				if score > best_score:
-					best_score = score
-					best_action = action
+		# 	best_score = -1
+		# 	best_action = None
+		# 	for action in [UP, DOWN, LEFT, RIGHT]:
+		# 		currentNodeState = copy.deepcopy(self.state)
+		# 		currentNodeScore = copy.deepcopy(self.game.get_score())
+		# 		_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
+		# 		if score > best_score:
+		# 			best_score = score
+		# 			best_action = action
 
-			if best_action == None:
-				best_action = random.choice([UP,DOWN,LEFT,RIGHT])
+		# 	if best_action == None:
+		# 		best_action = random.choice([UP,DOWN,LEFT,RIGHT])
 
-			successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
+		# 	successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
 			
 			
-		return currentNodeScore		
-
+		# return currentNodeScore		
 
 
 	def highest_tile(self,grid):
@@ -375,8 +398,55 @@ class UctTree(Tree):
 			# print "non random move: " + str(moves[bestMove - 1])
 			return bestMove
 
+
+	def heuristic(self):
+		score = 0
+		for corner in ["top-left","top-right","bottom-left","bottom-right"]:
+			corner_score = 0
+			for i in range(len(self.state) - 1):
+				for j in range(len(self.state[0]) - 1):
+					if self.state[i][j] == 0:
+							score += EMPTYCONSTANT
+					if corner == "top-left":
+						if self.state[i][j] >= self.state[i][j+1]:
+							score += 1
+						if self.state[i][j] >= self.state[i+1][j]:
+							score += 1
+					elif corner == "top-right":
+						if self.state[i][j] <= self.state[i][j+1]:
+							score += 1
+						if self.state[i][j] >= self.state[i+1][j]:
+							score += 1
+					elif corner == "bottom-left":
+						if self.state[i][j] >= self.state[i][j+1]:
+							score += 1
+						if self.state[i][j] <= self.state[i+1][j]:
+							score += 1
+					elif corner == "bottom-right":
+						if self.state[i][j] <= self.state[i][j+1]:
+							score += 1
+						if self.state[i][j] <= self.state[i+1][j]:
+							score += 1
+
+			score = max([corner_score,score])
+
+		score = score * HEURISTICCONSTANT
+		# print "heuristic called: " + str(score)
+		return score
+
+
+
+
+
+
 	# def evaluate(self):
 	# 	self.evaluate_secure()
+
+	"""
+		max value as value
+	"""
+	# def getValue(self):
+	# 	return self.maxValue
 
 
 

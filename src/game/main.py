@@ -6,21 +6,7 @@ import MCTS
 import numpy as np
 import copy
 import math
-
-# Directions, DO NOT MODIFY
-UP = 1
-DOWN = 2
-LEFT = 3
-RIGHT = 4
-QUIT = 5
-
-DEBUG = 0
-
-# Computational budget in number of iterations
-ITERATIONS = 100
-
-# Computational budget in seconds (float)
-TIMELIMIT = 0.1
+from constants import *
 
 class _Getch:
     def __call__(self, play):
@@ -142,61 +128,65 @@ def mcts_simple(game):
 def mcts(game):
     
     # (1) create root node with start state
-    root = MCTS.UctTree(game, game.get_state())
+    root = MCTS.UctTree(game.get_state())
 
     # (2) Repeatedly expand and search state tree based on samples. Repeat while
-    # within our computational budget (iterations) *[TODO: implement time based budget]
-    # for i in range(ITERATIONS):
+    # within our computational budget (iterations)
     start = time.clock()
-    # if (time.clock() - start) < TIMELIMIT:
-    #     print "yes"
-    # else:
-    #     print "no"
-    ctr = 1
-    while ((time.clock() - start) < TIMELIMIT):
-        debug_print(" ")
-        debug_print("-------------------------------------------")
-        debug_print("Iteration " + str(ctr+1) + " of " + str(ITERATIONS))
-        
-        # (A) use tree policy to select most urgent expandable node
-        simulationNode, path = root.select()
-        
-        if DEBUG == 1:
-            for j,node in enumerate(path):
-                debug_print("chose " + str(j) + ": " + str(node))
-
-        debug_print ("simulation node: " + str(simulationNode) + " at depth " + str(len(path)))
-
-
-        # (B) expand selected node and retrieve its children
-        simulationNode.expand()
-        children = simulationNode.getExpandedChildren()
-
-        if children == []:
-            debug_print("NO CHILDREN EXPANDED")
-        debug_print("expanded nodes: " + str(children))
-
-        # (C) Simulate a game for each of those children
-        for j,child in enumerate(children):
-
-            debug_print("simulating from " + str(j+1) + "th expanded node")
-            
-            # (i) Simulates game from child and retrieves final score
-            score = child.simulate()
-
-            debug_print("estimated score from " + str(j+1) + "th child:"+ str(score))
-            
-            fullpath = path + [child]
-
-            debug_print("propagating score through path: " + str(fullpath))
-            
-            # (ii) back-propagate that final score into the value of all expanded nodes in the path to child
-            child.backPropagate(score, fullpath)
-        ctr += 1
+    
+    if USETIMELIMIT:
+        ctr = 0
+        while ((time.clock() - start) < TIMELIMIT):
+            mcts_helper(root,ctr)
+            ctr += 1
+    else:
+        for ctr in range(ITERATIONS):
+            mcts_helper(root,ctr)   
 
     # (3) After compuational budget exceeded, halt planning and conduct the action
     #     leading to the node with the highest value
     return root.evaluate()
+
+def mcts_helper(root,ctr):
+    debug_print(" ")
+    debug_print("-------------------------------------------")
+    debug_print("Iteration " + str(ctr+1) + " of " + str(ITERATIONS))
+    
+    # (A) use tree policy to select most urgent expandable node
+    simulationNode, path = root.select()
+    
+    if DEBUG == 1:
+        for j,node in enumerate(path):
+            debug_print("select chose" + str(node) + "at level " + str(j+1))
+
+    debug_print ("simulation node: " + str(simulationNode) + " at depth " + str(len(path)))
+
+
+    # (B) expand selected node and retrieve its children
+    simulationNode.expand()
+    children = simulationNode.getExpandedChildren()
+
+    if children == []:
+        debug_print("NO CHILDREN EXPANDED")
+    debug_print("expanded nodes: " + str(children))
+
+    # (C) Simulate a game for each of those children
+    for j,child in enumerate(children):
+
+        debug_print("simulating from " + str(j+1) + "th expanded node")
+        
+        # (i) Simulates game from child and retrieves final score
+        score = child.simulate()
+
+        debug_print("estimated score from " + str(j+1) + "th child:"+ str(score))
+        
+        fullpath = path + [child]
+
+        debug_print("propagating score through path: " + str(fullpath))
+        
+        # (ii) back-propagate that final score into the value of all expanded nodes in the path to child
+        child.backPropagate(score, fullpath)
+
 
 """
     Repeatedly calls UCT implementation to determine each move
@@ -207,9 +197,10 @@ def mcts_play(height, width, scoring):
     # Start a new game
     play = TwentyFortyEight(height, width, scoring)
 
-    counter = 1 
+    
     
     # Play until end of game
+    counter = 1 
     while True:
         
         # Stop if end of game
@@ -218,13 +209,10 @@ def mcts_play(height, width, scoring):
         if moves == None:
             break
     
-        debug_print("*******************************")
-        debug_print("*******************************")
-        debug_print("Move #" + str(counter))
-        
+        debug_print("*******************************\n"+ "Move #" + str(counter))
+
         # choose next action using mcts
         action = mcts(play)
-        # action = mcts_simple(play)
         
         # execute chosen action
         play.move(action)
@@ -265,20 +253,20 @@ def corner_play(height, width, scoring):
     play.end_game()
     return final_score, highest
 
-def loop(height, width, scoring, n):
+def loop(height, width, strategy,scoring, n):
     scores = []
     highest = []
-    try:
-        for i in range(0,n):
-            if i%10 == 0:
-	            print "Test " + str(i+1)+ " out of " + str(n)
-            # score, high = corner_play(height, width, scoring)
-            score, high = mcts_play(height, width, scoring)
-            # score, high = random_play(height, width, scoring)
-            scores.append(score)
-            highest.append(high)
-    except:
-        print "Some error occurred!"
+    for i in range(0,n):
+        if i >= 50 and i % 10 == 0:
+                print "Test " + str(i+1)+ " out of " + str(n)
+        score, high = strategy(height, width, scoring)
+        
+        print "score:" + str(score)
+        print "high tile:" + str(high)
+
+        scores.append(score)
+        highest.append(high)
+
     
     scores = np.array(scores)
     if highest != []:
@@ -296,29 +284,31 @@ def size_test(size_min, size_max, scoring, n_each):
         print "Testing " + str(i) + " x " + str(i) + " grids:"
         loop(i, i, scoring, n_each)
 
-def main(strategy="mcts"):
-    if strategy == "corner":
-        corner_play(4, 4, 0)
+def usage():
+    print "usage: python main.py strategy repititions"
+    print "valid strategies: \"mcts\", \"corner\", \"random\", \"terminal\", \"simple\""
+
+def main(strategy,repititions):
+    if strategy == "mcts":
+        strategi = mcts_play
+    elif strategy == "corner":
+        strategi = corner_play
     elif strategy == "random":
-        random_play(4, 4, 2)
+        strategi = random_play
     elif strategy == "terminal":
-	   play_terminal(4, 4, 0)
+	    strategi = play_terminal
+    elif strategy == "simple":
+        strategi = mcts_simple
+    else:
+        return usage()
 
-	# Does this even work?
-    # elif strategy == "simple":
-    #     mcts_simple(4,4,0)
+    loop(4,4,strategi,0,repititions)
     
-    elif strategy == "loop":
-	   # loop(2, 2, 2, 100)
-    elif strategy == "size":
-        size_test(5, 8, 0, 10)
-    else:
-        mcts_play(2, 2, 0)
-
 if __name__=='__main__':
-    if len(sys.argv) == 2:
-        main(sys.argv[1])
+    if len(sys.argv) != 3:
+        usage()
     else:
-        main()
+        main(sys.argv[1],int(sys.argv[2]))
+
 
 
