@@ -19,7 +19,7 @@ OFFSETS = {UP: (1, 0),
 # Scoring scheme
 # 0 -> Traditional 2048 scoring, merges result in score of new tile added
 # 1 -> Score updated to the total sum of the tiles
-# 2 -> Score updated to the total sum of the log_2 value of the tiles
+# 2 -> Score updated to the total sum of the log_2 value of the tiles -- merges can lower total score!
 # Create more in self.update_score function!
 
 class TwentyFortyEight:
@@ -215,63 +215,94 @@ class TwentyFortyEight:
     # Useful in case we change how tiles are stored in memory, whether as true value or log_2(tile)
     # TODO: whenever tile value is accessed, use this function
     def get_tile_value(self, tile):
-    	return tile
+        return tile
 
     def update_score(self, starting_score, added_score):
-    	new_score = starting_score
-    	if self._scoring == 0:
-    		new_score += added_score
-    	if self._scoring == 1:
-    		new_score = 0
-    		for row in self._grid:
-    			for tile in row:
-    				new_score += self.get_tile_value(tile)    	
-    	if self._scoring == 2:
-    		new_score = 0
-    		for row in self._grid:
-    			for tile in row:
-    				tile_value = self.get_tile_value(tile)
-    				if tile_value > 0:
-    					new_score += int(math.log(tile_value, 2))
-    	return new_score
+        new_score = starting_score
+        if self._scoring == 0:
+            new_score += added_score
+        if self._scoring == 1:
+            new_score = 0
+            for row in self._grid:
+                for tile in row:
+                    new_score += self.get_tile_value(tile)        
+        if self._scoring == 2:
+            new_score = 0
+            for row in self._grid:
+                for tile in row:
+                    tile_value = self.get_tile_value(tile)
+                    if tile_value > 0:
+                        new_score += int(math.log(tile_value, 2))
+        return new_score
 
-    # def direction_quick(self, grid, direction):
-    # 	steps = self._height
-    #     changed = False
-    #     if direction == RIGHT or direction == LEFT:
-    #         steps = self._width
-    #     for index in self._borders[direction]:
-    #         cutted = self.cut(index, OFFSETS[direction], steps)
-    #         merged, _ = self.merge(cutted)
-    #         if cutted != merged:
-    #             changed = True
+    def direction_quick(self, grid, direction):
+        steps = self._height
 
+        # Check if primary direction (i.e., the inputted direction) is a legal move
+        primary_legal = False
 
-    #     legal = False
-    #     # Rows
-    #     for i in range(self._height):
-    #     	# Columns
-    #     	for j in range(self._width):
-    #     		try:
-    #     			if grid[i][j] != 0:
-    #                     return 0
+        # Check if secondary direction (i.e., the opposite of inputted direction) is legal
+        secondary_legal = False
 
+        if direction == RIGHT or direction == LEFT:
+            steps = self._width
+        for index in self._borders[direction]:
+            cutted = self.simulate_cut(index, OFFSETS[direction], steps, grid)
+            
+            if not primary_legal:
+                for i in range(len(cutted)-1):
+                    index = i+1
+                    tile = cutted[index]
+                    if tile == 0:
+                        continue
+                    else:
+                        if cutted[index-1] in [0, tile]:
+                            primary_legal = True
+                            break
 
-    # 	return legal
+            if not secondary_legal:
+                for i in range(len(cutted)-1):
+                    index = len(cutted)-(i+2)
+                    tile = cutted[index]
+                    if tile == 0:
+                        continue
+                    else:
+                        if cutted[index+1] in [0, tile]:
+                            secondary_legal = True
+                            break
+
+            if primary_legal and secondary_legal:
+                break
+
+        if direction == 1:
+            primary = 1
+            secondary = 2
+        elif direction == 2:
+            primary = 2
+            secondary = 1
+        elif direction == 3:
+            primary = 3
+            secondary = 4
+        else:
+            secondary = 4
+            primary = 3
+
+        legal = []
+        if primary_legal:
+            legal.append(primary)
+        if secondary_legal:
+            legal.append(secondary)
+
+        return legal
+
 
     # Can probably make more efficient by first checking for empty tiles...
     def legal_moves(self, grid):
         legal = []
 
-        for i in xrange(4):
-            test_grid = copy.deepcopy(grid)
-            # self.alert("\nTesting move "+str(i+1)+"!")
-            result, _ = self.get_successor(i+1, test_grid, 0)
-            if result != None:
-                legal.append(i+1)
-                # self.alert("Move "+str(i+1)+" was appended as a legal move!") 
-
-        # self.alert("All moves tested!")
+        vertical = self.direction_quick(grid, UP)
+        horizontal = self.direction_quick(grid, LEFT)
+        legal = vertical + horizontal
 
         if legal == []:
             # self.alert("No more moves!")
@@ -320,6 +351,10 @@ class TwentyFortyEight:
     def board_print(self):
         if EVERY_MOVE == 0:
             self.simple_print()
+            legal = self.legal_moves(self._grid)
+            print "Possible legal moves:", self.legal_moves(self._grid)
+            if not legal:
+            	self.end_game()
         if EVERY_MOVE == 1:
             self.complex_print()
         if EVERY_MOVE == 2 or EVERY_MOVE == -1:
