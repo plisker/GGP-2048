@@ -15,19 +15,19 @@ EVERY_MOVE = -1
 DEBUG = 0
 
 # If false, uses iteration limit
-USETIMELIMIT = True
+USETIMELIMIT = False
 
 # Computational budget in number of iterations
-ITERATIONS = 5
+ITERATIONS = 50
 
 # Computational budget in seconds (float)
-TIMELIMIT = .01
+TIMELIMIT = 0.1
 
 # Exploration weighting
 UCTCONSTANT = 8000 / math.sqrt(2)
 
 # Weighting of heuristic in uct
-HEURISTICCONSTANT = 10000
+HEURISTICCONSTANT = 0
 
 # Weighting of empty tiles in heuristic
 EMPTYCONSTANT = 5

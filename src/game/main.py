@@ -291,7 +291,7 @@ def usage():
     print "usage: python main.py strategy repititions"
     print "valid strategies: \"mcts\", \"corner\", \"random\", \"terminal\", \"simple\""
 
-def experiment(filename, num_trials):
+def experiment1(filename, num_trials):
     scores = []
     highest = []
     fullfilename = filename + " " + str(datetime.datetime.now()) + ".csv"
@@ -315,17 +315,17 @@ def experiment(filename, num_trials):
 
     if highest == []:
         raise Exception("No games were played.")
-    print(scores)
+ 
     # summarize results in terminal
     scores_array = np.array(scores)
     average_score = str(scores_array.mean())
     highest_tile = str(max(highest))
-    print(scores)
+  
     print "Average score: " + average_score
     print "Highest tile: " + highest_tile + "\n" 
 
     # write results to outfile
-    with open(fullfilename, "wb") as csvfile:
+    with open(fullfilename, "ab") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["scores","high tiles"])
         for i,score in enumerate(scores):
@@ -356,7 +356,7 @@ def main(argv):
         else:
             usage()
             sys.exit(4)
-    experiment(filename,num_trials)
+    experiment1(filename,num_trials)
 
 if __name__=='__main__':
     main(sys.argv[1:])
