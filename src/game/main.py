@@ -315,21 +315,21 @@ def experiment(filename, num_trials):
 
     if highest == []:
         raise Exception("No games were played.")
-
+    print(scores)
     # summarize results in terminal
-    scores = np.array(scores)
-    average_score = str(scores.mean())
+    scores_array = np.array(scores)
+    average_score = str(scores_array.mean())
     highest_tile = str(max(highest))
+    print(scores)
     print "Average score: " + average_score
     print "Highest tile: " + highest_tile + "\n" 
 
     # write results to outfile
-    
     with open(fullfilename, "wb") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["scores","high tiles"])
-        for i in range(len(scores)):
-            writer.writerow([scores[i],highest[i]]) 
+        for i,score in enumerate(scores):
+            writer.writerow([score,highest[i]]) 
         writer.writerow(["average score", "highest tile"])
         writer.writerow([average_score, highest_tile])
     
