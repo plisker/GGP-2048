@@ -18,27 +18,37 @@ EVERY_MOVE = -1
 DEBUG = 0
 
 # If false, uses iteration limit
-USETIMELIMIT = False
+USETIMELIMIT = True
 
 # Computational budget in number of iterations
 ITERATIONS = 5
 
 # Computational budget in seconds (float)
-TIMELIMIT = .01
+TIMELIMIT = .1
 
 # Exploration weighting
 UCTCONSTANT = 8000 / math.sqrt(2)
 
 # Weighting of heuristic in uct
-HEURISTICCONSTANT = 300
+HEURISTICCONSTANT = 10000
 
 # Weighting of empty tiles in heuristic
 EMPTYCONSTANT = 5
 
-if USETIMELIMIT:
-	print "Computational bound: " + str(TIMELIMIT) + " seconds"
-else:
-	print "Computational bound: " + str(ITERATIONS) + " iterations"
-print "uct constant: " + str(UCTCONSTANT)
-print "total heuristic constant: " + str(HEURISTICCONSTANT)
-print "heuristic empty tile constant: " + str(EMPTYCONSTANT)
+HEIGHT = 4
+
+WIDTH = 4
+
+# Scoring scheme
+# 0 -> Traditional 2048 scoring, merges result in score of new tile added
+# 1 -> Score updated to the total sum of the tiles
+# 2 -> Score updated to the total sum of the log_2 value of the tiles
+SCORING = 0
+
+# if USETIMELIMIT:
+# 	print "Computational bound: " + str(TIMELIMIT) + " seconds"
+# else:
+# 	print "Computational bound: " + str(ITERATIONS) + " iterations"
+# print "uct constant: " + str(UCTCONSTANT)
+# print "total heuristic constant: " + str(HEURISTICCONSTANT)
+# print "heuristic empty tile constant: " + str(EMPTYCONSTANT)

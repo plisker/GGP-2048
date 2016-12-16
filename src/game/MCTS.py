@@ -9,6 +9,65 @@ from constants import *
 """
 game = game.TwentyFortyEight(4,4)
 
+def zerolog(x):
+	if x <= 0:
+		return 0
+	else:
+		return math.log(x,2) 
+
+def heuristic(grid):
+	score = 0
+	for corner in ["top-left","top-right","bottom-left","bottom-right"]:
+		corner_score = 0
+		for i in range(len(grid) - 1):
+			for j in range(len(grid[0]) - 1):
+				if grid[i][j] == 0:
+					score += EMPTYCONSTANT
+				if corner == "top-left":
+					if grid[i][j] >= grid[i][j+1]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j]) - zerolog(grid[i][j+1])
+					if grid[i][j] >= grid[i+1][j]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j]) - zerolog(grid[i+1][j])
+				elif corner == "top-right":
+					if grid[i][j] <= grid[i][j+1]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j+1]) - zerolog(grid[i][j])
+					if grid[i][j] >= grid[i+1][j]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j]) - zerolog(grid[i+1][j])
+				elif corner == "bottom-left":
+					if grid[i][j] >= grid[i][j+1]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j]) - zerolog(grid[i][j+1])
+					if grid[i][j] <= grid[i+1][j]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i+1][j]) - zerolog(grid[i][j])
+				elif corner == "bottom-right":
+					if grid[i][j] <= grid[i][j+1]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i][j+1]) - zerolog(grid[i][j])
+					if grid[i][j] <= grid[i+1][j]:
+						# score += 1
+						# score += j
+						score += zerolog(grid[i+1][j]) - zerolog(grid[i][j])
+
+		score = max([corner_score,score])
+
+	score = score * HEURISTICCONSTANT
+	# print "heuristic called: " + str(score)
+	return score
+
+
+
 """
 	Parent class for a game tree with the information necessary for MCTS
 	at each node. Each child node is itself another Tree instance in the tree.
@@ -164,7 +223,7 @@ class UctTree(Tree):
 	
 	def __init__(self,state,lastMove=None,score=0):
 		Tree.__init__(self,state,lastMove,score)
-		self.heuristic_value = self.heuristic()
+		self.heuristic_value = heuristic(state)
 		
 	"""""""""""""""
 
@@ -177,13 +236,13 @@ class UctTree(Tree):
 
 	
 	def expand(self):
-		# self.expand_one_random()
-		self.expand_all()
+		self.expand_one_random()
+		# self.expand_all()
 
 	def simulate(self):
-		return self.simulate_score()
+		# return self.simulate_score()
 		# return self.simulate_highest_tile()
-		# return self.simulate_heuristic_score()
+		return self.simulate_heuristic()
 
 	
 	"""""""""""""""
@@ -319,49 +378,32 @@ class UctTree(Tree):
 			successor, _ = game.get_successor(randomMove, currentNodeState, successorScore)
 			
 		return currentNodeScore
-
 	"""
-		TODO: Simulates a game played using heuristics & returns final score 
+	
+	TODO: Simulates a game played using heuristics & returns final score 
 	"""
-	# def simulate_heuristic_score(self):
-		# best_heuristic = -1
-		# best_action = None
-		# currentNodeState = copy.deepcopy(self.state)
-		# currentNodeScore = copy.deepcopy(self.score)
+	def simulate_heuristic(self):
+		best_successor = copy.deepcopy(self.state)
+		best_score = 0
 
-		# for action in [UP, DOWN, LEFT, RIGHT]:
-		# 	current_state = copy.deepcopy(self.state)
-		# 	next_state, next_score = self.game.get_successor(action, currentNodeState, currentNodeScore)
-		# 	heuristic_value = self.heuristic(next_state)
-		# 	if heuristic_value > best_heuristic:
-		# 		best_heuristic = heuristic_value
-		# 		best_action = action
-		# if best_action == None:
-		# 	best_action = random.choice([UP,DOWN,LEFT,RIGHT])
-
-		# successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
-		
-		# while successor != None:
-		# 	currentNodeState = successor
-		# 	currentNodeScore = successorScore
+		while (best_successor != None):
 			
-		# 	best_score = -1
-		# 	best_action = None
-		# 	for action in [UP, DOWN, LEFT, RIGHT]:
-		# 		currentNodeState = copy.deepcopy(self.state)
-		# 		currentNodeScore = copy.deepcopy(self.game.get_score())
-		# 		_ , score = self.game.get_successor(action, currentNodeState, currentNodeScore)
-		# 		if score > best_score:
-		# 			best_score = score
-		# 			best_action = action
-
-		# 	if best_action == None:
-		# 		best_action = random.choice([UP,DOWN,LEFT,RIGHT])
-
-		# 	successor,successorScore = self.game.get_successor(best_action, currentNodeState, currentNodeScore)
+			current_state = best_successor	
+			best_score = -1
+			best_move = None
+			best_successor = None
 			
-			
-		# return currentNodeScore		
+			for direction in [UP, DOWN, LEFT, RIGHT]:
+				current_state_copy = copy.deepcopy(current_state)
+				successor,_ = game.get_successor(direction, current_state_copy, 0)	
+				if successor != None:
+					successor_score = heuristic(successor)
+					if successor_score > best_score:
+						best_score = successor_score
+						best_move = direction
+						best_successor = successor
+
+		return best_score
 
 
 	def highest_tile(self,grid):
@@ -397,46 +439,6 @@ class UctTree(Tree):
 			bestMove = bestNode.getLastMove() 
 			# print "non random move: " + str(moves[bestMove - 1])
 			return bestMove
-
-
-	def heuristic(self):
-		score = 0
-		for corner in ["top-left","top-right","bottom-left","bottom-right"]:
-			corner_score = 0
-			for i in range(len(self.state) - 1):
-				for j in range(len(self.state[0]) - 1):
-					if self.state[i][j] == 0:
-							score += EMPTYCONSTANT
-					if corner == "top-left":
-						if self.state[i][j] >= self.state[i][j+1]:
-							score += 1
-						if self.state[i][j] >= self.state[i+1][j]:
-							score += 1
-					elif corner == "top-right":
-						if self.state[i][j] <= self.state[i][j+1]:
-							score += 1
-						if self.state[i][j] >= self.state[i+1][j]:
-							score += 1
-					elif corner == "bottom-left":
-						if self.state[i][j] >= self.state[i][j+1]:
-							score += 1
-						if self.state[i][j] <= self.state[i+1][j]:
-							score += 1
-					elif corner == "bottom-right":
-						if self.state[i][j] <= self.state[i][j+1]:
-							score += 1
-						if self.state[i][j] <= self.state[i+1][j]:
-							score += 1
-
-			score = max([corner_score,score])
-
-		score = score * HEURISTICCONSTANT
-		# print "heuristic called: " + str(score)
-		return score
-
-
-
-
 
 
 	# def evaluate(self):

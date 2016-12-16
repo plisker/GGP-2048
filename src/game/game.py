@@ -377,6 +377,3 @@ class TwentyFortyEight:
                 if element > highest:
                     highest = element
         return highest
-
-if __name__=='__main__':
-        main()

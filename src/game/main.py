@@ -6,6 +6,9 @@ import MCTS
 import numpy as np
 import copy
 import math
+import csv
+import datetime
+import getopt
 from constants import *
 
 class _Getch:
@@ -288,27 +291,75 @@ def usage():
     print "usage: python main.py strategy repititions"
     print "valid strategies: \"mcts\", \"corner\", \"random\", \"terminal\", \"simple\""
 
-def main(strategy,repititions):
-    if strategy == "mcts":
-        strategi = mcts_play
-    elif strategy == "corner":
-        strategi = corner_play
-    elif strategy == "random":
-        strategi = random_play
-    elif strategy == "terminal":
-	    strategi = play_terminal
-    elif strategy == "simple":
-        strategi = mcts_simple
-    else:
-        return usage()
-
-    loop(4,4,strategi,0,repititions)
+def experiment(filename, num_trials):
+    scores = []
+    highest = []
+    fullfilename = filename + " " + str(datetime.datetime.now()) + ".csv"
+    print "Experiment to file: " + fullfilename
     
-if __name__=='__main__':
-    if len(sys.argv) != 3:
+    # run experiment
+    for i in range(0,num_trials):
+        
+        print "Trial " + str(i+1)+ " of " + str(num_trials)
+        
+        start = time.clock()
+        score, high = mcts_play(HEIGHT, WIDTH, SCORING)
+        end = time.clock()
+        
+        print "Score: " + str(score)
+        print "High tile: " + str(high)
+        print "Duration: " + str(end - start) + "s"
+
+        scores.append(score)
+        highest.append(high)
+
+    if highest == []:
+        raise Exception("No games were played.")
+
+    # summarize results in terminal
+    scores = np.array(scores)
+    average_score = str(scores.mean())
+    highest_tile = str(max(highest))
+    print "Average score: " + average_score
+    print "Highest tile: " + highest_tile + "\n" 
+
+    # write results to outfile
+    
+    with open(fullfilename, "wb") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["scores","high tiles"])
+        for i in range(len(scores)):
+            writer.writerow([scores[i],highest[i]]) 
+        writer.writerow(["average score", "highest tile"])
+        writer.writerow([average_score, highest_tile])
+    
+def usage():
+    print 'usage: main.py -n <num_trials> -f <outfile> -'
+
+def main(argv):
+    filename = None
+    num_trials = None
+    try:
+        opts, args = getopt.getopt(argv,"n:f:")
+    except getopt.GetoptError:
         usage()
-    else:
-        main(sys.argv[1],int(sys.argv[2]))
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt == '-h':
+            usage()
+            sys.exit(3)
+        elif opt == "-n":
+            num_trials = int(arg)
+        elif opt == "-f":
+            filename = arg
+        else:
+            usage()
+            sys.exit(4)
+    experiment(filename,num_trials)
+
+if __name__=='__main__':
+    main(sys.argv[1:])
 
 
 
