@@ -43,7 +43,7 @@
 
 ### Mon. Dec 12th
 
-* [Both] wrap up the fucking coding!
+* [Both] wrap up the coding!
 
 ### Tues. Dec 13th
 
